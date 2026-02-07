@@ -1,7 +1,7 @@
-/* AMF_1.101 */
+/* AMF_1.102 */
 (() => {
-    const BUILD = "AMF_1.101";
-    const DISPLAY = "1.101";
+    const BUILD = "AMF_1.102";
+    const DISPLAY = "1.102";
 
   // --- Helpers
   const $ = (sel) => document.querySelector(sel);
@@ -2210,6 +2210,54 @@ function buildCalendarSlotsFromPatients(patients, therapies) {
   return slots;
 }
 
+
+function buildCalendarSlotsFromSessions(sessions, patients) {
+  const year = calSelectedDate.getFullYear();
+  const month = calSelectedDate.getMonth();
+  const daysInThisMonth = new Date(year, month + 1, 0).getDate();
+
+  const patientsById = new Map();
+  (patients || []).forEach((p)=>{ if (p && p.id) patientsById.set(String(p.id), p); });
+
+  const slots = new Map(); // key -> {count,names,ids,tags}
+
+  function toDayNum(ymd) {
+    const d = dateOnlyLocal(ymd);
+    if (!d) return null;
+    if (d.getFullYear() !== year || d.getMonth() !== month) return null;
+    return d.getDate();
+  }
+
+  (Array.isArray(sessions) ? sessions : []).forEach((s) => {
+    if (!s) return;
+    if (String(s.isDeleted || "").toLowerCase() === "true") return;
+
+    const occDate = (s.to_date || s.toDate || "").toString().slice(0,10) || (s.from_date || s.fromDate || "").toString().slice(0,10);
+    const occTime = normalizeTimeList(s.to_time || s.toTime || s.from_time || s.fromTime || "")[0] || "";
+    if (!occDate || !occTime) return;
+
+    const dayNum = toDayNum(occDate);
+    if (!dayNum || dayNum < 1 || dayNum > daysInThisMonth) return;
+
+    const pid = String(s.paziente_id || s.pazienteId || s.patient_id || s.patientId || "").trim();
+    const p = patientsById.get(pid);
+    const name = p ? patientDisplayName(p) : "Paziente";
+    const tag = p ? getSocTagIndexById(p.societa_id || "") : null;
+
+    const slotKey = `${dayNum}|${occTime}`;
+    const prev = slots.get(slotKey) || { count: 0, names: [], ids: [], tags: [] };
+    prev.count += 1;
+    prev.names.push(name);
+    prev.ids.push(pid);
+    prev.tags.push(tag);
+    slots.set(slotKey, prev);
+  });
+
+  return slots;
+}
+
+
+
 function paintCalendarSlots(slots) {
   if (!calBody) return;
   calSlotPatients = slots;
@@ -2349,6 +2397,24 @@ async function fetchCalendarTherapiesForMonth_(year, month0) {
 
     const res = await api("listTherapies", { userId: user.id, year: String(year), month: String(month0 + 1) });
     const arr = res && (res.therapies || res.terapie || res.items) ? (res.therapies || res.terapie || res.items) : [];
+    return Array.isArray(arr) ? arr : [];
+  } catch (err) {
+    if (apiHintIfUnknownAction(err)) return [];
+    return [];
+  }
+}
+
+
+
+async function fetchCalendarSessionsForMonth_(year, month0) {
+  try {
+    const user = getSession();
+    if (!user || !user.id) return [];
+    const ok = await ensureApiReady();
+    if (!ok) return [];
+
+    const res = await api("listSessions", { userId: user.id, year: String(year), month: String(month0 + 1) });
+    const arr = res && (res.sessions || res.sedute || res.items) ? (res.sessions || res.sedute || res.items) : [];
     return Array.isArray(arr) ? arr : [];
   } catch (err) {
     if (apiHintIfUnknownAction(err)) return [];
@@ -4949,7 +5015,7 @@ async function renderSocietaDeleteList() {
   // PWA (iOS): registra Service Worker
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {
-      navigator.serviceWorker.register("./service-worker.js?build=1.100").catch(() => {});
+      navigator.serviceWorker.register("./service-worker.js?build=1.102").catch(() => {});
     });
   }
 })();
