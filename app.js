@@ -1,7 +1,7 @@
-/* AMF_1.096 */
+/* AMF_1.098 */
 (() => {
-    const BUILD = "AMF_1.096";
-    const DISPLAY = "1.096";
+    const BUILD = "AMF_1.098";
+    const DISPLAY = "1.098";
 
   // --- Helpers
   const $ = (sel) => document.querySelector(sel);
@@ -4195,12 +4195,24 @@ function formatItMonth(dateObj) {
       if (currentPatient && currentPatient.id) {
         const oldG = JSON.stringify(currentPatient.giorni_map || {});
         const newG = String(payload.giorni_settimana || "");
-        const changed = (newG !== String(oldG || "")) ||
-          (String(payload.data_inizio || "") !== String(currentPatient.data_inizio || "")) ||
-          (String(payload.data_fine || "") !== String(currentPatient.data_fine || ""));
+        const oldStart = String(currentPatient.data_inizio || "").slice(0,10);
+        const oldEnd = String(currentPatient.data_fine || "").slice(0,10);
+        const newStart = String(payload.data_inizio || "").slice(0,10);
+        const newEnd = String(payload.data_fine || "").slice(0,10);
+
+        const changed = (newG !== String(oldG || "")) || (newStart !== oldStart) || (newEnd !== oldEnd);
         if (changed) {
           payload.sync_terapie = true;
-          payload.therapy_effective_from = ymdLocal(new Date());
+
+          // Se l'utente imposta un nuovo intervallo "dal" interno al percorso, usa quel "dal" come decorrenza
+          // e mantieni data_inizio/data_fine del paziente invariati (lo storico resta intatto).
+          if (newStart && oldStart && newStart > oldStart && (!oldEnd || newStart <= oldEnd)) {
+            payload.therapy_effective_from = newStart;
+            if (oldStart) payload.data_inizio = oldStart;
+            if (oldEnd) payload.data_fine = oldEnd;
+          } else {
+            payload.therapy_effective_from = ymdLocal(new Date());
+          }
         }
       } else {
         payload.sync_terapie = true;
@@ -4931,7 +4943,7 @@ async function renderSocietaDeleteList() {
   // PWA (iOS): registra Service Worker
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {
-      navigator.serviceWorker.register("./service-worker.js?v=1.096").catch(() => {});
+      navigator.serviceWorker.register("./service-worker.js?build=1.098").catch(() => {});
     });
   }
 })();
