@@ -1,7 +1,7 @@
-/* AMF_1.098 */
+/* AMF_1.100 */
 (() => {
-    const BUILD = "AMF_1.098";
-    const DISPLAY = "1.098";
+    const BUILD = "AMF_1.100";
+    const DISPLAY = "1.100";
 
   // --- Helpers
   const $ = (sel) => document.querySelector(sel);
@@ -2123,19 +2123,24 @@ function buildCalendarSlotsFromPatients(patients, therapies) {
     const pidStr = String(p.id || "").trim();
     const segs = pidStr ? (therapiesByPid.get(pidStr) || []) : [];
 
-    // Se esistono segmenti in tab 'terapie' per questo paziente, usa quelli (override del vecchio giorni_settimana)
+    // Se esistono segmenti in tab 'terapie' per questo paziente, usali SOLO per i giorni coperti.
+    // Per i giorni NON coperti da alcun segmento, fai fallback al vecchio giorni_settimana del paziente.
+    const coveredDays = new Set();
     if (Array.isArray(segs) && segs.length) {
       for (let dayNum = 1; dayNum <= 31; dayNum++) {
         const cellDate = dateForDayNumber(dayNum);
         if (!cellDate) continue;
         const wk = weekdayKeyForDate(cellDate);
 
+        let added = false;
         segs.forEach((seg) => {
           if (!seg) return;
           if (seg.weekdays.indexOf(wk) < 0) return;
           if (!inRange(cellDate, seg.start, seg.end)) return;
-          (seg.times || []).forEach((t) => {
-            if (!t) return;
+          const times = (seg.times || []).filter(Boolean);
+          if (!times.length) return;
+          added = true;
+          times.forEach((t) => {
             const slotKey = `${dayNum}|${t}`;
             const prev = slots.get(slotKey) || { count: 0, names: [], ids: [], tags: [] };
             prev.count += 1;
@@ -2145,8 +2150,8 @@ function buildCalendarSlotsFromPatients(patients, therapies) {
             slots.set(slotKey, prev);
           });
         });
+        if (added) coveredDays.add(dayNum);
       }
-      return;
     }
 
     const raw = p.giorni_settimana || p.giorni || "";
@@ -2175,6 +2180,7 @@ function buildCalendarSlotsFromPatients(patients, therapies) {
     if (!weekdayEntries.length) return;
 
     for (let dayNum = 1; dayNum <= 31; dayNum++) {
+      if (coveredDays && coveredDays.has(dayNum)) continue;
       const cellDate = dateForDayNumber(dayNum);
       if (!cellDate) continue;
 
@@ -4943,7 +4949,7 @@ async function renderSocietaDeleteList() {
   // PWA (iOS): registra Service Worker
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {
-      navigator.serviceWorker.register("./service-worker.js?build=1.098").catch(() => {});
+      navigator.serviceWorker.register("./service-worker.js?build=1.100").catch(() => {});
     });
   }
 })();
