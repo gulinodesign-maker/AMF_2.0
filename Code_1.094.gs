@@ -1133,6 +1133,12 @@ function weekdayKey_(dayLabel) {
   return null;
 }
 
+// Alias per compatibilità (fix AMF_1.096)
+function wkKeyFromLabel_(dayLabel) {
+  return weekdayKey_(dayLabel);
+}
+
+
 function parseGiorniMap_(raw) {
   if (!raw) return {};
   try {

@@ -1,7 +1,7 @@
-/* AMF_1.094 */
+/* AMF_1.096 */
 (() => {
-    const BUILD = "AMF_1.094";
-    const DISPLAY = "1.094";
+    const BUILD = "AMF_1.096";
+    const DISPLAY = "1.096";
 
   // --- Helpers
   const $ = (sel) => document.querySelector(sel);
@@ -4280,6 +4280,9 @@ function formatItMonth(dateObj) {
     const raw = currentPatient.giorni_settimana || currentPatient.giorni || null;
     const map = parseGiorniMap(raw);
     currentPatient.giorni_map = map;
+    currentPatient._giorni_json = JSON.stringify(map || {});
+    currentPatient._data_inizio = String(currentPatient.data_inizio || "").slice(0,10);
+    currentPatient._data_fine = String(currentPatient.data_fine || "").slice(0,10);
     level = String(currentPatient.livello || "");
     $("#patName").value = currentPatient.nome_cognome || "";
     $("#patAddress").value = currentPatient.address || "";
@@ -4391,6 +4394,37 @@ $("#btnPatEdit")?.addEventListener("click", () => setPatientFormEnabled(true));
       geo_ts: (geo ? geo.ts : ""),
       utente_id: user.id
     };
+    // Sync segmenti in tab 'terapie' per evitare che modifiche a metà percorso riscrivano il passato
+    try {
+      const isUpdate = !!(currentPatient && currentPatient.id);
+      if (isUpdate) {
+        const oldG = String(currentPatient._giorni_json || JSON.stringify(parseGiorniMap(currentPatient.giorni_settimana || currentPatient.giorni || "") || {}));
+        const newG = String(payload.giorni_settimana || "");
+        const oldStart = String(currentPatient._data_inizio || currentPatient.data_inizio || "").slice(0, 10);
+        const oldEnd = String(currentPatient._data_fine || currentPatient.data_fine || "").slice(0, 10);
+        const newStart = String(payload.data_inizio || "").slice(0, 10);
+        const newEnd = String(payload.data_fine || "").slice(0, 10);
+
+        const changed = (newG !== String(oldG || "")) || (newStart !== oldStart) || (newEnd !== oldEnd);
+        if (changed) {
+          payload.sync_terapie = true;
+
+          // Se l'utente imposta un nuovo intervallo "dal" interno al percorso, usa quel "dal" come decorrenza
+          // e mantieni data_inizio/data_fine del paziente invariati (lo storico resta intatto).
+          if (newStart && oldStart && newStart > oldStart && (!oldEnd || newStart <= oldEnd)) {
+            payload.therapy_effective_from = newStart;
+            if (oldStart) payload.data_inizio = oldStart;
+            if (oldEnd) payload.data_fine = oldEnd;
+          } else {
+            payload.therapy_effective_from = ymdLocal(new Date());
+          }
+        }
+      } else {
+        payload.sync_terapie = true;
+        payload.therapy_effective_from = String(payload.data_inizio || "") || ymdLocal(new Date());
+      }
+    } catch (_) {}
+
 
     const ok = await ensureApiReady();
     if (!ok) return;
@@ -4897,7 +4931,7 @@ async function renderSocietaDeleteList() {
   // PWA (iOS): registra Service Worker
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {
-      navigator.serviceWorker.register("./service-worker.js?v=1.094").catch(() => {});
+      navigator.serviceWorker.register("./service-worker.js?v=1.096").catch(() => {});
     });
   }
 })();
