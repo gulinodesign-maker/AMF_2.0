@@ -1,7 +1,7 @@
-/* AMF_1.100 */
+/* AMF_1.101 */
 (() => {
-    const BUILD = "AMF_1.100";
-    const DISPLAY = "1.100";
+    const BUILD = "AMF_1.101";
+    const DISPLAY = "1.101";
 
   // --- Helpers
   const $ = (sel) => document.querySelector(sel);
