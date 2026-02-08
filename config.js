@@ -1,8 +1,8 @@
-/* AMF_1.103 */
+/* AMF_2.001 */
 /**
  * URL della Web App Google Apps Script (deploy /exec).
  * Puoi comunque cambiarlo dall'app (salvato in locale).
  */
 window.AMF_CONFIG = {
-  API_URL: "https://script.google.com/macros/s/AKfycbxHpNkpL202ooGlyg3leLGjx8mM9GxVahVJ5EVZBPPNkeui_uG3IxZQrlpeKwcpX4So/exec"
+  API_URL: "https://script.google.com/macros/s/AKfycbwaZo8NyfhFIgofTv1DMf8A32z1GV9f4EVuCxXR6QKsg5C7pkyVRf5fzkhZzeqtkbttkQ/exec"
 };

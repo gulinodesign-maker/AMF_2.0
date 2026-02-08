@@ -1,7 +1,7 @@
-/* AMF_1.104 */
+/* AMF_2.001 */
 (() => {
-    const BUILD = "AMF_1.104";
-    const DISPLAY = "1.104";
+    const BUILD = "AMF_2.001";
+    const DISPLAY = "2.001";
 
   // --- Helpers
   const $ = (sel) => document.querySelector(sel);
@@ -2123,24 +2123,19 @@ function buildCalendarSlotsFromPatients(patients, therapies) {
     const pidStr = String(p.id || "").trim();
     const segs = pidStr ? (therapiesByPid.get(pidStr) || []) : [];
 
-    // Se esistono segmenti in tab 'terapie' per questo paziente, usali SOLO per i giorni coperti.
-    // Per i giorni NON coperti da alcun segmento, fai fallback al vecchio giorni_settimana del paziente.
-    const coveredDays = new Set();
+    // Se esistono segmenti in tab 'terapie' per questo paziente, usa quelli (override del vecchio giorni_settimana)
     if (Array.isArray(segs) && segs.length) {
       for (let dayNum = 1; dayNum <= 31; dayNum++) {
         const cellDate = dateForDayNumber(dayNum);
         if (!cellDate) continue;
         const wk = weekdayKeyForDate(cellDate);
 
-        let added = false;
         segs.forEach((seg) => {
           if (!seg) return;
           if (seg.weekdays.indexOf(wk) < 0) return;
           if (!inRange(cellDate, seg.start, seg.end)) return;
-          const times = (seg.times || []).filter(Boolean);
-          if (!times.length) return;
-          added = true;
-          times.forEach((t) => {
+          (seg.times || []).forEach((t) => {
+            if (!t) return;
             const slotKey = `${dayNum}|${t}`;
             const prev = slots.get(slotKey) || { count: 0, names: [], ids: [], tags: [] };
             prev.count += 1;
@@ -2150,8 +2145,8 @@ function buildCalendarSlotsFromPatients(patients, therapies) {
             slots.set(slotKey, prev);
           });
         });
-        if (added) coveredDays.add(dayNum);
       }
+      return;
     }
 
     const raw = p.giorni_settimana || p.giorni || "";
@@ -2180,7 +2175,6 @@ function buildCalendarSlotsFromPatients(patients, therapies) {
     if (!weekdayEntries.length) return;
 
     for (let dayNum = 1; dayNum <= 31; dayNum++) {
-      if (coveredDays && coveredDays.has(dayNum)) continue;
       const cellDate = dateForDayNumber(dayNum);
       if (!cellDate) continue;
 
@@ -2209,54 +2203,6 @@ function buildCalendarSlotsFromPatients(patients, therapies) {
 
   return slots;
 }
-
-
-function buildCalendarSlotsFromSessions(sessions, patients) {
-  const year = calSelectedDate.getFullYear();
-  const month = calSelectedDate.getMonth();
-  const daysInThisMonth = new Date(year, month + 1, 0).getDate();
-
-  const patientsById = new Map();
-  (patients || []).forEach((p)=>{ if (p && p.id) patientsById.set(String(p.id), p); });
-
-  const slots = new Map(); // key -> {count,names,ids,tags}
-
-  function toDayNum(ymd) {
-    const d = dateOnlyLocal(ymd);
-    if (!d) return null;
-    if (d.getFullYear() !== year || d.getMonth() !== month) return null;
-    return d.getDate();
-  }
-
-  (Array.isArray(sessions) ? sessions : []).forEach((s) => {
-    if (!s) return;
-    if (String(s.isDeleted || "").toLowerCase() === "true") return;
-
-    const occDate = (s.to_date || s.toDate || "").toString().slice(0,10) || (s.from_date || s.fromDate || "").toString().slice(0,10);
-    const occTime = normalizeTimeList(s.to_time || s.toTime || s.from_time || s.fromTime || "")[0] || "";
-    if (!occDate || !occTime) return;
-
-    const dayNum = toDayNum(occDate);
-    if (!dayNum || dayNum < 1 || dayNum > daysInThisMonth) return;
-
-    const pid = String(s.paziente_id || s.pazienteId || s.patient_id || s.patientId || "").trim();
-    const p = patientsById.get(pid);
-    const name = p ? patientDisplayName(p) : "Paziente";
-    const tag = p ? getSocTagIndexById(p.societa_id || "") : null;
-
-    const slotKey = `${dayNum}|${occTime}`;
-    const prev = slots.get(slotKey) || { count: 0, names: [], ids: [], tags: [] };
-    prev.count += 1;
-    prev.names.push(name);
-    prev.ids.push(pid);
-    prev.tags.push(tag);
-    slots.set(slotKey, prev);
-  });
-
-  return slots;
-}
-
-
 
 function paintCalendarSlots(slots) {
   if (!calBody) return;
@@ -2397,24 +2343,6 @@ async function fetchCalendarTherapiesForMonth_(year, month0) {
 
     const res = await api("listTherapies", { userId: user.id, year: String(year), month: String(month0 + 1) });
     const arr = res && (res.therapies || res.terapie || res.items) ? (res.therapies || res.terapie || res.items) : [];
-    return Array.isArray(arr) ? arr : [];
-  } catch (err) {
-    if (apiHintIfUnknownAction(err)) return [];
-    return [];
-  }
-}
-
-
-
-async function fetchCalendarSessionsForMonth_(year, month0) {
-  try {
-    const user = getSession();
-    if (!user || !user.id) return [];
-    const ok = await ensureApiReady();
-    if (!ok) return [];
-
-    const res = await api("listSessions", { userId: user.id, year: String(year), month: String(month0 + 1) });
-    const arr = res && (res.sessions || res.sedute || res.items) ? (res.sessions || res.sedute || res.items) : [];
     return Array.isArray(arr) ? arr : [];
   } catch (err) {
     if (apiHintIfUnknownAction(err)) return [];
@@ -4267,24 +4195,12 @@ function formatItMonth(dateObj) {
       if (currentPatient && currentPatient.id) {
         const oldG = JSON.stringify(currentPatient.giorni_map || {});
         const newG = String(payload.giorni_settimana || "");
-        const oldStart = String(currentPatient.data_inizio || "").slice(0,10);
-        const oldEnd = String(currentPatient.data_fine || "").slice(0,10);
-        const newStart = String(payload.data_inizio || "").slice(0,10);
-        const newEnd = String(payload.data_fine || "").slice(0,10);
-
-        const changed = (newG !== String(oldG || "")) || (newStart !== oldStart) || (newEnd !== oldEnd);
+        const changed = (newG !== String(oldG || "")) ||
+          (String(payload.data_inizio || "") !== String(currentPatient.data_inizio || "")) ||
+          (String(payload.data_fine || "") !== String(currentPatient.data_fine || ""));
         if (changed) {
           payload.sync_terapie = true;
-
-          // Se l'utente imposta un nuovo intervallo "dal" interno al percorso, usa quel "dal" come decorrenza
-          // e mantieni data_inizio/data_fine del paziente invariati (lo storico resta intatto).
-          if (newStart && oldStart && newStart > oldStart && (!oldEnd || newStart <= oldEnd)) {
-            payload.therapy_effective_from = newStart;
-            if (oldStart) payload.data_inizio = oldStart;
-            if (oldEnd) payload.data_fine = oldEnd;
-          } else {
-            payload.therapy_effective_from = ymdLocal(new Date());
-          }
+          payload.therapy_effective_from = ymdLocal(new Date());
         }
       } else {
         payload.sync_terapie = true;
@@ -4364,9 +4280,6 @@ function formatItMonth(dateObj) {
     const raw = currentPatient.giorni_settimana || currentPatient.giorni || null;
     const map = parseGiorniMap(raw);
     currentPatient.giorni_map = map;
-    currentPatient._giorni_json = JSON.stringify(map || {});
-    currentPatient._data_inizio = String(currentPatient.data_inizio || "").slice(0,10);
-    currentPatient._data_fine = String(currentPatient.data_fine || "").slice(0,10);
     level = String(currentPatient.livello || "");
     $("#patName").value = currentPatient.nome_cognome || "";
     $("#patAddress").value = currentPatient.address || "";
@@ -4478,37 +4391,6 @@ $("#btnPatEdit")?.addEventListener("click", () => setPatientFormEnabled(true));
       geo_ts: (geo ? geo.ts : ""),
       utente_id: user.id
     };
-    // Sync segmenti in tab 'terapie' per evitare che modifiche a metà percorso riscrivano il passato
-    try {
-      const isUpdate = !!(currentPatient && currentPatient.id);
-      if (isUpdate) {
-        const oldG = String(currentPatient._giorni_json || JSON.stringify(parseGiorniMap(currentPatient.giorni_settimana || currentPatient.giorni || "") || {}));
-        const newG = String(payload.giorni_settimana || "");
-        const oldStart = String(currentPatient._data_inizio || currentPatient.data_inizio || "").slice(0, 10);
-        const oldEnd = String(currentPatient._data_fine || currentPatient.data_fine || "").slice(0, 10);
-        const newStart = String(payload.data_inizio || "").slice(0, 10);
-        const newEnd = String(payload.data_fine || "").slice(0, 10);
-
-        const changed = (newG !== String(oldG || "")) || (newStart !== oldStart) || (newEnd !== oldEnd);
-        if (changed) {
-          payload.sync_terapie = true;
-
-          // Se l'utente imposta un nuovo intervallo "dal" interno al percorso, usa quel "dal" come decorrenza
-          // e mantieni data_inizio/data_fine del paziente invariati (lo storico resta intatto).
-          if (newStart && oldStart && newStart > oldStart && (!oldEnd || newStart <= oldEnd)) {
-            payload.therapy_effective_from = newStart;
-            if (oldStart) payload.data_inizio = oldStart;
-            if (oldEnd) payload.data_fine = oldEnd;
-          } else {
-            payload.therapy_effective_from = ymdLocal(new Date());
-          }
-        }
-      } else {
-        payload.sync_terapie = true;
-        payload.therapy_effective_from = String(payload.data_inizio || "") || ymdLocal(new Date());
-      }
-    } catch (_) {}
-
 
     const ok = await ensureApiReady();
     if (!ok) return;
@@ -5015,7 +4897,7 @@ async function renderSocietaDeleteList() {
   // PWA (iOS): registra Service Worker
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {
-      navigator.serviceWorker.register("./service-worker.js?build=1.104").catch(() => {});
+      navigator.serviceWorker.register("./service-worker.js?v=2.001").catch(() => {});
     });
   }
 })();
