@@ -1,7 +1,7 @@
-/* AMF_2.001 */
+/* AMF_2.000 */
 (() => {
-    const BUILD = "AMF_2.001";
-    const DISPLAY = "2.001";
+    const BUILD = "AMF_2.003";
+    const DISPLAY = "2.003";
 
   // --- Helpers
   const $ = (sel) => document.querySelector(sel);
@@ -292,7 +292,14 @@
     return base + (base.includes("?") ? "&" : "?") + sp.toString();
   }
 
-  function apiJsonp(action, params) {
+  
+  // --- Session field compatibility (v3 schema)
+  function sessDate(s){ return sessDate() || s.date || ""; }
+  function sessToDate(s){ return s.to_date || s.to_date || s.date || sessDate() || ""; }
+  function sessFromTime(s){ return s.from_time || s.start_time || ""; }
+  function sessToTime(s){ return s.to_time || s.end_time || s.from_time || s.start_time || ""; }
+
+function apiJsonp(action, params) {
     const cb = "AMF_JSONP_" + Math.random().toString(36).slice(2);
     const url = buildUrl(action, Object.assign({}, params || {}, {
       callback: cb,
@@ -760,7 +767,7 @@ try {
       if (!mv) continue;
       if (String(mv.paziente_id || "") !== pid0) continue;
 
-      const fd2 = dateOnlyLocal(mv.from_date);
+      const fd2 = dateOnlyLocal(sessDate(mv));
       if (fd2 && fd2.getTime() >= monthStart.getTime() && fd2.getTime() <= monthEnd.getTime()) {
         sessions -= 1;
       }
@@ -2411,7 +2418,7 @@ function collapseMoves_(moves) {
     // keep latest per fromKey
     const byFrom = new Map(); // fromKey -> mv
     arr.forEach((mv) => {
-      const fk = `${String(mv.from_date).slice(0,10)}|${normTime(mv.from_time)}`;
+      const fk = `${String(sessDate(mv)).slice(0,10)}|${normTime(sessFromTime(mv))}`;
       const cur = byFrom.get(fk);
       if (!cur) { byFrom.set(fk, mv); return; }
       if (moveTs_(mv) >= moveTs_(cur)) byFrom.set(fk, mv);
@@ -2444,8 +2451,8 @@ function collapseMoves_(moves) {
       out.push({
         id: mv.id || "",
         paziente_id: pid,
-        from_date: String(mv.from_date).slice(0,10),
-        from_time: normTime(mv.from_time),
+        from_date: String(sessDate(mv)).slice(0,10),
+        from_time: normTime(sessFromTime(mv)),
         to_date: String(cur.to_date || "").slice(0,10),
         to_time: normTime(cur.to_time || ""),
         isDelete: !!cur.isDelete || !(String(cur.to_date || "").trim() && String(cur.to_time || "").trim()),
@@ -2480,15 +2487,15 @@ async function applyCalendarMoves_(baseSlots, patients) {
     const p = patientById.get(String(mv.paziente_id));
     if (!p) return;
 
-    const from = parseYmd_(mv.from_date);
+    const from = parseYmd_(sessDate(mv));
     const to = parseYmd_(mv.to_date);
 
     if (from && from.y === year && from.m === month0) {
-      const kFrom = `${from.d}|${mv.from_time}`;
+      const kFrom = `${from.d}|${sessFromTime(mv)}`;
       slotRemovePatient_(slots, kFrom, mv.paziente_id);
     }
     if (to && to.y === year && to.m === month0) {
-      const kTo = `${to.d}|${mv.to_time}`;
+      const kTo = `${to.d}|${sessToTime(mv)}`;
       slotAddPatient_(slots, kTo, p);
     }
   });
@@ -2714,7 +2721,7 @@ async function ensurePatientsForCalendar() {
           const mvPrev = Array.isArray(calMovesCache) ? calMovesCache.find((mv) =>
             String(mv && mv.paziente_id) === String(pid) &&
             String(mv && mv.to_date || "").slice(0, 10) === String(ymd || "").slice(0, 10) &&
-            normTime(mv && mv.to_time) === normTime(t)
+            normTime(mv && sessToTime(mv)) === normTime(t)
           ) : null;
           if (mvPrev) {
             effective_from_date = String(mvPrev.from_date || "").slice(0, 10) || effective_from_date;
@@ -4897,7 +4904,7 @@ async function renderSocietaDeleteList() {
   // PWA (iOS): registra Service Worker
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {
-      navigator.serviceWorker.register("./service-worker.js?v=2.001").catch(() => {});
+      navigator.serviceWorker.register("./service-worker.js?v=2.000").catch(() => {});
     });
   }
 })();
