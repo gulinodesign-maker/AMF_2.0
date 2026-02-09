@@ -1,7 +1,7 @@
 /* AMF_2.000 */
 (() => {
-    const BUILD = "AMF_2.010";
-    const DISPLAY = "2.010";
+const BUILD = "AMF_2.012";
+const DISPLAY = "2.012";
 
   // --- Helpers
   const $ = (sel) => document.querySelector(sel);
@@ -60,7 +60,7 @@
       }
     } catch (_) {}
   })();
- = $("#toast");
+  const toastEl = $("#toast");
   let toastTimer = null;
   function toast(msg) {
     if (!toastEl) return;
@@ -3216,9 +3216,8 @@ function formatItMonth(dateObj) {
   if (buildLabel) buildLabel.textContent = DISPLAY;
 
   // Anti-suggerimenti iOS/macOS: evita che WebKit mostri liste (autofill/storico)
-  // Pattern: input readonly finché l'utente non interagisce.
-  // Nota: i campi login/modifica vengono rimessi readonly ogni volta che si riapre la view;
-  // quindi il binding NON deve essere "once".
+  // Nota iOS: evitare "readonly" sui campi di login perché su WebKit iOS può impedire il focus
+  // e far sembrare l'app bloccata nella view di login.
   function bindReadonlyUnlock(el) {
     if (!el) return;
     try {
@@ -3284,11 +3283,8 @@ function formatItMonth(dateObj) {
     }
     const loginNome = $("#loginNome");
     if (loginNome) {
-      // Assicura che lo sblocco readonly sia sempre bindato anche dopo riaperture view
-      try { bindReadonlyUnlock(loginNome); } catch (_) {}
-      // Non mostrare mai liste/suggerimenti di account: inserimento manuale
+      // Inserimento manuale
       loginNome.value = "";
-      loginNome.setAttribute("readonly", "readonly");
     }
     showView("login");
   }
@@ -3304,9 +3300,7 @@ function formatItMonth(dateObj) {
     }
     const modNome = $("#modNome");
     if (modNome) {
-      try { bindReadonlyUnlock(modNome); } catch (_) {}
       modNome.value = "";
-      modNome.setAttribute("readonly", "readonly");
     }
     showView("modify");
   }
