@@ -1,7 +1,7 @@
-/* AMF_2.000 */
+/* AMF_2.006 */
 (() => {
-    const BUILD = "AMF_2.005";
-    const DISPLAY = "2.005";
+    const BUILD = "AMF_2.006";
+    const DISPLAY = "2.006";
 
   // --- Helpers
   const $ = (sel) => document.querySelector(sel);
@@ -60,7 +60,7 @@
       }
     } catch (_) {}
   })();
- = $("#toast");
+  const toastEl = $("#toast");
   let toastTimer = null;
   function toast(msg) {
     if (!toastEl) return;
