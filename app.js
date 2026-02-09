@@ -1,7 +1,7 @@
-/* AMF_2.009 */
+/* AMF_2.000 */
 (() => {
-    const BUILD = "AMF_2.009";
-    const DISPLAY = "2.009";
+    const BUILD = "AMF_2.010";
+    const DISPLAY = "2.010";
 
   // --- Helpers
   const $ = (sel) => document.querySelector(sel);
@@ -60,7 +60,7 @@
       }
     } catch (_) {}
   })();
-  const toastEl = $("#toast");
+ = $("#toast");
   let toastTimer = null;
   function toast(msg) {
     if (!toastEl) return;
@@ -355,10 +355,10 @@
 
   
   // --- Session field compatibility (v3 schema)
-  function sessDate(s){ return (s && (s.date || s.from_date || s.start_date || s.startDate)) ? (s.date || s.from_date || s.start_date || s.startDate) : ""; }
-  function sessToDate(s){ return (s && (s.to_date || s.end_date || s.toDate || s.endDate)) ? (s.to_date || s.end_date || s.toDate || s.endDate) : (sessDate(s) || ""); }
-  function sessFromTime(s){ return (s && (s.from_time || s.start_time || s.fromTime || s.startTime)) ? (s.from_time || s.start_time || s.fromTime || s.startTime) : ""; }
-  function sessToTime(s){ return (s && (s.to_time || s.end_time || s.toTime || s.endTime)) ? (s.to_time || s.end_time || s.toTime || s.endTime) : (sessFromTime(s) || ""); }
+  function sessDate(s){ return (s && (s.date || s.from_date || s.fromDate)) || ""; }
+  function sessToDate(s){ return (s && (s.to_date || s.toDate || s.date || s.from_date || s.fromDate)) || ""; }
+  function sessFromTime(s){ return s.from_time || s.start_time || ""; }
+  function sessToTime(s){ return s.to_time || s.end_time || s.from_time || s.start_time || ""; }
 
 function apiJsonp(action, params) {
     const cb = "AMF_JSONP_" + Math.random().toString(36).slice(2);
@@ -1659,10 +1659,6 @@ const DAY_LABEL_TO_KEY = {
 };
 
 function normTime(t) {
-  if (t && typeof t === "object") {
-    // support {from,to} objects
-    t = (t.from || t.time || t.from_time || "");
-  }
   if (t == null || t === "") return "";
 
   // Date object -> HH:MM
@@ -3661,7 +3657,7 @@ function formatItMonth(dateObj) {
     if (!user) return;
     try {
       const data = await apiCached("listPatients", { userId: user.id }, 8000);
-      patientsCache = Array.isArray(data.pazienti) ? data.pazienti : (Array.isArray(data.patients) ? data.patients : []);
+      patientsCache = Array.isArray(data.pazienti) ? data.pazienti : [];
       patientsLoaded = true;
       if (render) renderPatients();
     } catch (err) {
@@ -4124,8 +4120,7 @@ function formatItMonth(dateObj) {
   async function validateTherapyMapNoOverlap(selfId, giorniMap, curStart, curEnd) {
     const map = giorniMap && typeof giorniMap === "object" ? giorniMap : {};
     for (const k of Object.keys(map)) {
-      const raw = map[k];
-      const t = (raw && typeof raw === "object") ? normTime(raw.from || raw.time || raw.from_time) : raw;
+      const t = map[k];
       if (!t) continue;
       const conflict = await hasTherapyConflictSlot(k, t, curStart, curEnd, selfId);
       if (conflict) return { ok: false, day: k, time: t };
@@ -4190,7 +4185,7 @@ function formatItMonth(dateObj) {
         if (t === "—") {
           delete currentPatient.giorni_map[day];
         } else {
-          currentPatient.giorni_map[day] = { from: t, to: t };
+          currentPatient.giorni_map[day] = t;
         }
         applyDayUI();
         closePickTimeModal();
@@ -4204,8 +4199,7 @@ function formatItMonth(dateObj) {
     const map = (currentPatient && currentPatient.giorni_map) ? currentPatient.giorni_map : {};
     document.querySelectorAll(".day-btn").forEach((btn) => {
       const d = btn.getAttribute("data-day");
-      const raw = (map && map[d]) ? map[d] : "—";
-      const t = (raw && typeof raw === "object") ? (normTime(raw.from || raw.time || raw.from_time) || "—") : (raw || "—");
+      const t = map && map[d] ? map[d] : "—";
       btn.classList.toggle("active", t !== "—");
       const lab = $("#t_" + d);
       if (lab) lab.textContent = t;
@@ -4463,9 +4457,7 @@ $("#btnPatEdit")?.addEventListener("click", () => setPatientFormEnabled(true));
       geo_lng: (geo ? geo.lng : ""),
       geo_accuracy: (geo && geo.acc != null ? geo.acc : ""),
       geo_ts: (geo ? geo.ts : ""),
-      utente_id: user.id,
-      sync_terapie: true,
-      therapy_effective_from: (currentPatient && currentPatient.id) ? ymdLocal(new Date()) : (data_inizio || ymdLocal(new Date()))
+      utente_id: user.id
     };
 
     const ok = await ensureApiReady();
