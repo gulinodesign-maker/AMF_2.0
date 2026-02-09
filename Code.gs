@@ -1,4 +1,4 @@
-// Code_AMF_2.010
+// Code_AMF_2.011
 /**
  * AMF - Google Apps Script Web App API (v3 schema: multi-utente + società con tariffe + sedute immutabili)
  * Spreadsheet ID is fixed to the user's new sheet.
@@ -817,7 +817,7 @@ function doGet(e) {
 
     switch (action) {
       case "ping":
-        return out_({ ok: true, ts: nowIso_(), version: "2.010" }, cb);
+        return out_({ ok: true, ts: nowIso_(), version: "2.011" }, cb);
 
       // Auth
       case "listUsers":
