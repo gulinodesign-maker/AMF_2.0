@@ -1,12 +1,66 @@
 /* AMF_2.000 */
 (() => {
-    const BUILD = "AMF_2.004";
-    const DISPLAY = "2.004";
+    const BUILD = "AMF_2.005";
+    const DISPLAY = "2.005";
 
   // --- Helpers
   const $ = (sel) => document.querySelector(sel);
 
-  const toastEl = $("#toast");
+  (function ensureApiUrlDefault() {
+    try {
+      const cfg = (window.AMF_CONFIG && String(window.AMF_CONFIG.API_URL || "").trim()) || "";
+      const cfgOk = cfg && cfg.startsWith("http") && !cfg.includes("PASTE_YOUR_GAS_WEBAPP_URL_HERE");
+
+      const last = (localStorage.getItem("AMF_LAST_BUILD") || "").trim();
+      const locked = (localStorage.getItem("AMF_API_LOCKED") || "0") === "1";
+      const current = (localStorage.getItem("AMF_API_URL") || "").trim();
+
+      // Se non c'è nulla salvato, usa sempre il default del pacchetto.
+      if (!current && cfgOk) {
+        localStorage.setItem("AMF_API_URL", cfg);
+        localStorage.setItem("AMF_API_LOCKED", "0");
+      }
+
+      // Se cambia build e il default del pacchetto è cambiato:
+      // - se NON è lockato, aggiorna automaticamente
+      // - se è lockato, avvisa (mismatch) e propone il nuovo endpoint nel modal API
+      if (last !== BUILD && cfgOk) {
+        if (current && current !== cfg) {
+          if (!locked) {
+            localStorage.setItem("AMF_API_URL", cfg);
+            localStorage.setItem("AMF_API_LOCKED", "0");
+            localStorage.setItem("AMF_API_MIGRATED_FROM", current);
+          } else {
+            localStorage.setItem("AMF_API_PENDING", cfg);
+            localStorage.setItem("AMF_API_MISMATCH", "1");
+          }
+        }
+        localStorage.setItem("AMF_LAST_BUILD", BUILD);
+      } else {
+        // Mantieni sempre aggiornato il marker build
+        localStorage.setItem("AMF_LAST_BUILD", BUILD);
+      }
+    } catch (_) {}
+  })();
+;
+  (function apiUrlNotice() {
+    try {
+      const mig = (localStorage.getItem("AMF_API_MIGRATED_FROM") || "").trim();
+      if (mig) {
+        localStorage.removeItem("AMF_API_MIGRATED_FROM");
+        setTimeout(() => toast("Endpoint aggiornato automaticamente"), 800);
+      }
+      const mismatch = (localStorage.getItem("AMF_API_MISMATCH") || "") === "1";
+      if (mismatch) {
+        const shown = (localStorage.getItem("AMF_API_MISMATCH_SHOWN") || "").trim();
+        if (shown !== BUILD) {
+          localStorage.setItem("AMF_API_MISMATCH_SHOWN", BUILD);
+          setTimeout(() => toast("API diversa dal deploy: verifica Impostazioni API"), 1200);
+        }
+      }
+    } catch (_) {}
+  })();
+ = $("#toast");
   let toastTimer = null;
   function toast(msg) {
     if (!toastEl) return;
@@ -211,7 +265,13 @@
   }
 
   function setApiUrl(url) {
-    localStorage.setItem("AMF_API_URL", url.trim());
+    const u = (url || "").trim();
+    localStorage.setItem("AMF_API_URL", u);
+    const cfg = getDefaultApiUrl();
+    if (cfg && u === cfg) localStorage.setItem("AMF_API_LOCKED", "0");
+    else localStorage.setItem("AMF_API_LOCKED", "1");
+    localStorage.removeItem("AMF_API_MISMATCH");
+    localStorage.removeItem("AMF_API_PENDING");
   }
 
 
@@ -243,7 +303,8 @@
     if (!modalApi) return Promise.resolve(false);
     modalApi.classList.add("show");
     modalApi.setAttribute("aria-hidden", "false");
-    apiUrlInput.value = getApiUrl() || "";
+    const pending = (localStorage.getItem("AMF_API_PENDING") || "").trim();
+    apiUrlInput.value = pending || getApiUrl() || "";
     apiUrlInput.focus();
     return new Promise((resolve) => { apiModalResolve = resolve; });
   }
@@ -4904,7 +4965,7 @@ async function renderSocietaDeleteList() {
   // PWA (iOS): registra Service Worker
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {
-      navigator.serviceWorker.register("./service-worker.js?v=2.000").catch(() => {});
+      navigator.serviceWorker.register(`./service-worker.js?v=${DISPLAY}`).catch(() => {});
     });
   }
 })();
