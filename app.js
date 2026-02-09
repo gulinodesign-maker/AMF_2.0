@@ -1,7 +1,7 @@
-/* AMF_2.008 */
+/* AMF_2.009 */
 (() => {
-    const BUILD = "AMF_2.008";
-    const DISPLAY = "2.008";
+    const BUILD = "AMF_2.009";
+    const DISPLAY = "2.009";
 
   // --- Helpers
   const $ = (sel) => document.querySelector(sel);
@@ -1659,6 +1659,10 @@ const DAY_LABEL_TO_KEY = {
 };
 
 function normTime(t) {
+  if (t && typeof t === "object") {
+    // support {from,to} objects
+    t = (t.from || t.time || t.from_time || "");
+  }
   if (t == null || t === "") return "";
 
   // Date object -> HH:MM
@@ -4120,7 +4124,8 @@ function formatItMonth(dateObj) {
   async function validateTherapyMapNoOverlap(selfId, giorniMap, curStart, curEnd) {
     const map = giorniMap && typeof giorniMap === "object" ? giorniMap : {};
     for (const k of Object.keys(map)) {
-      const t = map[k];
+      const raw = map[k];
+      const t = (raw && typeof raw === "object") ? normTime(raw.from || raw.time || raw.from_time) : raw;
       if (!t) continue;
       const conflict = await hasTherapyConflictSlot(k, t, curStart, curEnd, selfId);
       if (conflict) return { ok: false, day: k, time: t };
@@ -4185,7 +4190,7 @@ function formatItMonth(dateObj) {
         if (t === "—") {
           delete currentPatient.giorni_map[day];
         } else {
-          currentPatient.giorni_map[day] = t;
+          currentPatient.giorni_map[day] = { from: t, to: t };
         }
         applyDayUI();
         closePickTimeModal();
@@ -4199,7 +4204,8 @@ function formatItMonth(dateObj) {
     const map = (currentPatient && currentPatient.giorni_map) ? currentPatient.giorni_map : {};
     document.querySelectorAll(".day-btn").forEach((btn) => {
       const d = btn.getAttribute("data-day");
-      const t = map && map[d] ? map[d] : "—";
+      const raw = (map && map[d]) ? map[d] : "—";
+      const t = (raw && typeof raw === "object") ? (normTime(raw.from || raw.time || raw.from_time) || "—") : (raw || "—");
       btn.classList.toggle("active", t !== "—");
       const lab = $("#t_" + d);
       if (lab) lab.textContent = t;
@@ -4457,7 +4463,9 @@ $("#btnPatEdit")?.addEventListener("click", () => setPatientFormEnabled(true));
       geo_lng: (geo ? geo.lng : ""),
       geo_accuracy: (geo && geo.acc != null ? geo.acc : ""),
       geo_ts: (geo ? geo.ts : ""),
-      utente_id: user.id
+      utente_id: user.id,
+      sync_terapie: true,
+      therapy_effective_from: (currentPatient && currentPatient.id) ? ymdLocal(new Date()) : (data_inizio || ymdLocal(new Date()))
     };
 
     const ok = await ensureApiReady();
