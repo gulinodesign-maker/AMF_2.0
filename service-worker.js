@@ -1,11 +1,11 @@
-/* AMF_2.006 */
-const CACHE_NAME='AMF_2.006';
+/* AMF_2.007 */
+const CACHE_NAME='AMF_2.007';
 const APP_SHELL = [
   "./",
   "./index.html",
-  "./styles.css?v=2.006",
-  "./config.js?v=2.006",
-  "./app.js?v=2.006",
+  "./styles.css?v=2.007",
+  "./config.js?v=2.007",
+  "./app.js?v=2.007",
   "./manifest.json",
   "./version.json"
 ];

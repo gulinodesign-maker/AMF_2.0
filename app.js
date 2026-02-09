@@ -1,7 +1,7 @@
-/* AMF_2.006 */
+/* AMF_2.007 */
 (() => {
-    const BUILD = "AMF_2.006";
-    const DISPLAY = "2.006";
+    const BUILD = "AMF_2.007";
+    const DISPLAY = "2.007";
 
   // --- Helpers
   const $ = (sel) => document.querySelector(sel);
@@ -60,7 +60,7 @@
       }
     } catch (_) {}
   })();
-  const toastEl = $("#toast");
+ = $("#toast");
   let toastTimer = null;
   function toast(msg) {
     if (!toastEl) return;
@@ -355,10 +355,10 @@
 
   
   // --- Session field compatibility (v3 schema)
-  function sessDate(s){ return sessDate() || s.date || ""; }
-  function sessToDate(s){ return s.to_date || s.to_date || s.date || sessDate() || ""; }
-  function sessFromTime(s){ return s.from_time || s.start_time || ""; }
-  function sessToTime(s){ return s.to_time || s.end_time || s.from_time || s.start_time || ""; }
+  function sessDate(s){ return (s && (s.date || s.from_date || s.start_date || s.startDate)) ? (s.date || s.from_date || s.start_date || s.startDate) : ""; }
+  function sessToDate(s){ return (s && (s.to_date || s.end_date || s.toDate || s.endDate)) ? (s.to_date || s.end_date || s.toDate || s.endDate) : (sessDate(s) || ""); }
+  function sessFromTime(s){ return (s && (s.from_time || s.start_time || s.fromTime || s.startTime)) ? (s.from_time || s.start_time || s.fromTime || s.startTime) : ""; }
+  function sessToTime(s){ return (s && (s.to_time || s.end_time || s.toTime || s.endTime)) ? (s.to_time || s.end_time || s.toTime || s.endTime) : (sessFromTime(s) || ""); }
 
 function apiJsonp(action, params) {
     const cb = "AMF_JSONP_" + Math.random().toString(36).slice(2);
@@ -3657,7 +3657,7 @@ function formatItMonth(dateObj) {
     if (!user) return;
     try {
       const data = await apiCached("listPatients", { userId: user.id }, 8000);
-      patientsCache = Array.isArray(data.pazienti) ? data.pazienti : [];
+      patientsCache = Array.isArray(data.pazienti) ? data.pazienti : (Array.isArray(data.patients) ? data.patients : []);
       patientsLoaded = true;
       if (render) renderPatients();
     } catch (err) {
