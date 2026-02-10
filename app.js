@@ -1,7 +1,7 @@
-/* AMF_1.094 */
+/* AMF_1.095 */
 (() => {
-    const BUILD = "AMF_1.094";
-    const DISPLAY = "1.094";
+    const BUILD = "AMF_1.095";
+    const DISPLAY = "1.095";
 
   // --- Helpers
   const $ = (sel) => document.querySelector(sel);
@@ -714,84 +714,258 @@ function getStatsMovesCache_() {
     return { start, end };
   }
 
+  function getPatientTherapiesForStats_(p) {
+    // p.terapie è salvato su Sheet come JSON string; in UI può essere già oggetto.
+    let arr = [];
+    try {
+      const raw = (p && (p.terapie ?? p.terapia)) ?? "";
+      if (Array.isArray(raw)) arr = raw;
+      else if (typeof raw === "string" && raw.trim()) {
+        const j = JSON.parse(raw);
+        if (Array.isArray(j)) arr = j;
+      } else if (raw && typeof raw === "object") {
+        // se arriva come oggetto non-array, ignoralo
+      }
+    } catch (_) { arr = []; }
+
+    // Fallback: terapia singola legacy
+    if (!Array.isArray(arr) || !arr.length) {
+      return [{
+        livello: getPatientLevel_(p),
+        data_inizio: String(p?.data_inizio || "").trim(),
+        data_fine: String(p?.data_fine || "").trim(),
+        giorni_settimana: parseGiorniMap(p?.giorni_settimana || p?.giorni || {})
+      }];
+    }
+
+    // Normalizza shape
+    return arr.map((t) => ({
+      livello: normalizeLevel_(t?.livello),
+      data_inizio: String(t?.data_inizio || t?.start || "").trim(),
+      data_fine: String(t?.data_fine || t?.end || "").trim(),
+      giorni_settimana: parseGiorniMap(t?.giorni_settimana || t?.giorni_map || t?.giorni || {})
+    }));
+  }
+
+
   function calcSessionsForPatientMonth_(p, year, monthIndex) {
     if (!p || p.isDeleted) return 0;
 
     const sid = String(p.societa_id || p.societaId || p.soc || "").trim();
     if (statsSelectedSoc !== "ALL" && sid !== statsSelectedSoc) return 0;
 
-    const lv = getPatientLevel_(p);
-    if (statsSelectedLevel !== "T" && lv !== statsSelectedLevel) return 0;
-
-    const range = getPatientRangeWithinYear_(p, year);
-    if (!range) return 0;
+    const therapies = getPatientTherapiesForStats_(p);
+    if (!therapies.length) return 0;
 
     const monthStart = new Date(year, monthIndex, 1); monthStart.setHours(0,0,0,0);
     const monthEnd = new Date(year, monthIndex + 1, 0); monthEnd.setHours(0,0,0,0);
 
-    const start = new Date(Math.max(range.start.getTime(), monthStart.getTime()));
-    const end = new Date(Math.min(range.end.getTime(), monthEnd.getTime()));
-    if (start.getTime() > end.getTime()) return 0;
-
-    const raw = p.giorni_settimana || p.giorni || "";
-    const map = parseGiorniMap(raw);
-    if (!map || typeof map !== "object") return 0;
-
-    const rate = getRateForPatient_(p);
-    if (!rate) return 0;
-
     let sessions = 0;
-    Object.keys(map).forEach((k) => {
-      const dayLabel = __normDayLabel(k);
-      let wk = DAY_LABEL_TO_KEY[dayLabel];
-      if (wk === undefined || wk === null) {
-        if (/^\d+$/.test(dayLabel)) {
-          const n = parseInt(dayLabel, 10);
-          if (n >= 0 && n <= 6) wk = n;
+
+    for (const t of therapies) {
+      const lv = normalizeLevel_(t?.livello);
+      if (statsSelectedLevel !== "T" && lv !== statsSelectedLevel) continue;
+
+      const range = getPatientRangeWithinYear_({ data_inizio: t?.data_inizio, data_fine: t?.data_fine }, year);
+      if (!range) continue;
+
+      const start = new Date(Math.max(range.start.getTime(), monthStart.getTime()));
+      const end = new Date(Math.min(range.end.getTime(), monthEnd.getTime()));
+      if (start.getTime() > end.getTime()) continue;
+
+      const map = parseGiorniMap(t?.giorni_settimana || t?.giorni_map || {});
+      if (!map || typeof map !== "object") continue;
+
+      Object.keys(map).forEach((k) => {
+        const dayLabel = __normDayLabel(k);
+        let wk = DAY_LABEL_TO_KEY[dayLabel];
+        if (wk === undefined || wk === null) {
+          if (/^\d+$/.test(dayLabel)) {
+            const n = parseInt(dayLabel, 10);
+            if (n >= 0 && n <= 6) wk = n;
+          }
         }
-      }
-      if (wk === undefined || wk === null) return;
-      const times = normalizeTimeList(map[k]);
-      const perWeek = times.length || 0;
-      if (!perWeek) return;
-      const occ = countWeekdayInRange_(start, end, wk);
-      sessions += occ * perWeek;
-    });
+        if (wk === undefined || wk === null) return;
+
+        const times = normalizeTimeList(map[k]);
+        const perWeek = times.length || 0;
+        if (!perWeek) return;
+
+        const occ = countWeekdayInRange_(start, end, wk);
+        sessions += occ * perWeek;
+      });
+    }
 
     // Applica spostamenti/cancellazioni (moves) per questo mese
-try {
-  const moves = getStatsMovesCache_();
-  if (moves && moves.length) {
-    const pid0 = String(p.id != null ? p.id : (p.paziente_id || p.pazienteId || ""));
-    for (const mv of moves) {
-      if (!mv) continue;
-      if (String(mv.paziente_id || "") !== pid0) continue;
+    try {
+      const moves = getStatsMovesCache_();
+      if (moves && moves.length) {
+        const pid0 = String(p.id != null ? p.id : (p.paziente_id || p.pazienteId || ""));
+        for (const mv of moves) {
+          if (!mv) continue;
+          if (String(mv.paziente_id || "") !== pid0) continue;
 
-      const fd2 = dateOnlyLocal(mv.from_date);
-      if (fd2 && fd2.getTime() >= monthStart.getTime() && fd2.getTime() <= monthEnd.getTime()) {
-        sessions -= 1;
-      }
+          const fd2 = dateOnlyLocal(mv.from_date);
+          if (fd2 && fd2.getTime() >= monthStart.getTime() && fd2.getTime() <= monthEnd.getTime()) {
+            sessions -= 1;
+          }
 
-      if (!mv.isDelete && String(mv.to_date || "").trim()) {
-        const td2 = dateOnlyLocal(mv.to_date);
-        if (td2 && td2.getTime() >= monthStart.getTime() && td2.getTime() <= monthEnd.getTime()) {
-          sessions += 1;
+          if (!mv.isDelete && String(mv.to_date || "").trim()) {
+            const td2 = dateOnlyLocal(mv.to_date);
+            if (td2 && td2.getTime() >= monthStart.getTime() && td2.getTime() <= monthEnd.getTime()) {
+              sessions += 1;
+            }
+          }
         }
       }
-    }
-  }
-} catch (_) {}
+    } catch (_) {}
 
-if (sessions < 0) sessions = 0;
-return sessions;
-
+    if (sessions < 0) sessions = 0;
+    return sessions;
   }
 
   function calcAmountForPatientMonth_(p, year, monthIndex) {
-    const sessions = calcSessionsForPatientMonth_(p, year, monthIndex);
-    if (!sessions) return 0;
-    const rate = getRateForPatient_(p);
-    return sessions * (rate || 0);
+    if (!p || p.isDeleted) return 0;
+
+    const sid = String(p.societa_id || p.societaId || p.soc || "").trim();
+    if (statsSelectedSoc !== "ALL" && sid !== statsSelectedSoc) return 0;
+
+    const therapies0 = getPatientTherapiesForStats_(p);
+    const therapies = (statsSelectedLevel === "T")
+      ? therapies0.slice()
+      : therapies0.filter((t) => normalizeLevel_(t?.livello) === statsSelectedLevel);
+
+    if (!therapies.length) return 0;
+
+    const yearRange = { start: new Date(year, 0, 1), end: new Date(year, 11, 31) };
+    yearRange.start.setHours(0,0,0,0);
+    yearRange.end.setHours(0,0,0,0);
+
+    const monthStart = new Date(year, monthIndex, 1); monthStart.setHours(0,0,0,0);
+    const monthEnd = new Date(year, monthIndex + 1, 0); monthEnd.setHours(0,0,0,0);
+
+    // Calcolo base per terapia (senza moves)
+    const baseSessionsByT = new Array(therapies.length).fill(0);
+
+    for (let ti = 0; ti < therapies.length; ti++) {
+      const t = therapies[ti];
+      const range = getPatientRangeWithinYear_({ data_inizio: t?.data_inizio, data_fine: t?.data_fine }, year);
+      if (!range) continue;
+
+      const start = new Date(Math.max(range.start.getTime(), monthStart.getTime()));
+      const end = new Date(Math.min(range.end.getTime(), monthEnd.getTime()));
+      if (start.getTime() > end.getTime()) continue;
+
+      const map = parseGiorniMap(t?.giorni_settimana || t?.giorni_map || {});
+      if (!map || typeof map !== "object") continue;
+
+      Object.keys(map).forEach((k) => {
+        const dayLabel = __normDayLabel(k);
+        let wk = DAY_LABEL_TO_KEY[dayLabel];
+        if (wk === undefined || wk === null) {
+          if (/^\d+$/.test(dayLabel)) {
+            const n = parseInt(dayLabel, 10);
+            if (n >= 0 && n <= 6) wk = n;
+          }
+        }
+        if (wk === undefined || wk === null) return;
+
+        const times = normalizeTimeList(map[k]);
+        const perWeek = times.length || 0;
+        if (!perWeek) return;
+
+        const occ = countWeekdayInRange_(start, end, wk);
+        baseSessionsByT[ti] += occ * perWeek;
+      });
+    }
+
+    // Helper: trova terapia più probabile per una seduta (data+ora)
+    function findTherapyIndexForSession_(dateStr, timeStr) {
+      const d = dateOnlyLocal(dateStr);
+      const tNorm = normTime(timeStr);
+      if (!d || !tNorm) return -1;
+
+      const wd = d.getDay(); // 0=Sun..6=Sat
+      // convert to our wk keys (0..6 Monday..Sunday?) DAY_LABEL_TO_KEY uses labels.
+      // In map we allow numeric day labels too; for matching usiamo la stessa logica:
+      for (let i = 0; i < therapies.length; i++) {
+        const th = therapies[i];
+        const range = getPatientRangeWithinYear_({ data_inizio: th?.data_inizio, data_fine: th?.data_fine }, year);
+        if (!range) continue;
+        const dd = new Date(d); dd.setHours(0,0,0,0);
+        if (dd.getTime() < range.start.getTime() || dd.getTime() > range.end.getTime()) continue;
+
+        const map = parseGiorniMap(th?.giorni_settimana || th?.giorni_map || {});
+        const keys = Object.keys(map || {});
+        for (const k of keys) {
+          const dayLabel = __normDayLabel(k);
+          let wk = DAY_LABEL_TO_KEY[dayLabel];
+          if (wk === undefined || wk === null) {
+            if (/^\d+$/.test(dayLabel)) {
+              const n = parseInt(dayLabel, 10);
+              if (n >= 0 && n <= 6) wk = n;
+            }
+          }
+          if (wk === undefined || wk === null) continue;
+          // Nota: la nostra rappresentazione wk è 0=Lun..6=Dom; JS getDay è 0=Dom..6=Sab.
+          // Mappiamo JS->wk:
+          const jsToWk = (wd === 0) ? 6 : (wd - 1);
+          if (wk !== jsToWk) continue;
+
+          const times = normalizeTimeList(map[k]);
+          if (times.some((x) => normTime(x) === tNorm)) return i;
+        }
+      }
+
+      // fallback: prima terapia valida per data
+      for (let i = 0; i < therapies.length; i++) {
+        const th = therapies[i];
+        const range = getPatientRangeWithinYear_({ data_inizio: th?.data_inizio, data_fine: th?.data_fine }, year);
+        if (!range) continue;
+        const dd = new Date(d); dd.setHours(0,0,0,0);
+        if (dd.getTime() >= range.start.getTime() && dd.getTime() <= range.end.getTime()) return i;
+      }
+
+      return 0;
+    }
+
+    // Applica moves distribuendoli sulla terapia più probabile
+    const sessionsByT = baseSessionsByT.slice();
+    try {
+      const moves = getStatsMovesCache_();
+      if (moves && moves.length) {
+        const pid0 = String(p.id != null ? p.id : (p.paziente_id || p.pazienteId || ""));
+        for (const mv of moves) {
+          if (!mv) continue;
+          if (String(mv.paziente_id || "") !== pid0) continue;
+
+          const fd2 = dateOnlyLocal(mv.from_date);
+          if (fd2 && fd2.getTime() >= monthStart.getTime() && fd2.getTime() <= monthEnd.getTime()) {
+            const ti = findTherapyIndexForSession_(mv.from_date, mv.from_time);
+            if (ti >= 0) sessionsByT[ti] -= 1;
+          }
+
+          if (!mv.isDelete && String(mv.to_date || "").trim()) {
+            const td2 = dateOnlyLocal(mv.to_date);
+            if (td2 && td2.getTime() >= monthStart.getTime() && td2.getTime() <= monthEnd.getTime()) {
+              const ti = findTherapyIndexForSession_(mv.to_date, mv.to_time);
+              if (ti >= 0) sessionsByT[ti] += 1;
+            }
+          }
+        }
+      }
+    } catch (_) {}
+
+    // Importo = somma(sessioni terapia * tariffa livello terapia)
+    let total = 0;
+    for (let ti = 0; ti < therapies.length; ti++) {
+      const cnt = Math.max(0, sessionsByT[ti] || 0);
+      if (!cnt) continue;
+      const lv = normalizeLevel_(therapies[ti]?.livello);
+      const rate = getRateForPatient_({ societa_id: sid, livello: lv });
+      total += cnt * (rate || 0);
+    }
+    return total;
   }
 
   function computeStatsRows_() {
@@ -2850,6 +3024,11 @@ async function ensurePatientsForCalendar() {
           invalidateStatsMovesCache_();
           toast("Spostato");
           await updateCalendarUI();
+          try {
+            await loadPatients({ render: false });
+            if (currentView === "pazienti") renderPatients();
+            if (currentView === "stats") await renderStatsTable_();
+          } catch (_) {}
         } catch (err) {
           if (apiHintIfUnknownAction(err)) return;
           toast(String(err && err.message ? err.message : "Errore spostamento"));
@@ -5013,7 +5192,7 @@ async function renderSocietaDeleteList() {
   // PWA (iOS): registra Service Worker
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {
-      navigator.serviceWorker.register("./service-worker.js?v=1.094").catch(() => {});
+      navigator.serviceWorker.register("./service-worker.js?v=1.095").catch(() => {});
     });
   }
 })();
