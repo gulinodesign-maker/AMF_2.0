@@ -505,7 +505,7 @@ function createPatient_(userId, payloadJson) {
   if (col("data_inizio") > 0) row[col("data_inizio")-1] = payload.data_inizio || "";
   if (col("data_fine") > 0) row[col("data_fine")-1] = payload.data_fine || "";
   if (col("giorni_settimana") > 0) row[col("giorni_settimana")-1] = payload.giorni_settimana || "{}";
-  if (col("terapie") > 0) row[col("terapie")-1] = payload.terapie || "";
+  if (col("terapie") > 0) row[col("terapie")-1] = payload.terapie || payload.terapia || "[]";
   if (col("note") > 0) row[col("note")-1] = payload.note || "";
   if (col("utente_id") > 0) row[col("utente_id")-1] = String(userId);
   if (col("isDeleted") > 0) row[col("isDeleted")-1] = false;
@@ -570,6 +570,7 @@ function updatePatient_(userId, patientId, payloadJson) {
   if (payload.data_inizio !== undefined) setIf("data_inizio", payload.data_inizio || "");
   if (payload.data_fine !== undefined) setIf("data_fine", payload.data_fine || "");
   if (payload.giorni_settimana !== undefined) setIf("giorni_settimana", payload.giorni_settimana || "{}");
+  if (payload.terapie !== undefined || payload.terapia !== undefined) setIf("terapie", payload.terapie || payload.terapia || "[]");
   if (payload.note !== undefined) setIf("note", payload.note || "");
 
   setIf("updatedAt", now);

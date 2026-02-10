@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Montalto PMS</title>
-  <link rel="stylesheet" href="./styles.css?v=1.093" />
+  <link rel="stylesheet" href="./styles.css?v=1.094" />
   <link rel="manifest" href="./manifest.json" />
   <meta name="theme-color" content="#2a74b8" />
   <link rel="apple-touch-icon" href="./assets/apple-touch-icon.png" />
@@ -83,7 +83,7 @@
       </section>
         </div>
         <div class="home-footer" aria-label="Build">
-          <div class="build" id="buildLabel">1.093</div>
+          <div class="build" id="buildLabel">1.094</div>
         </div>
       </div>
     </section>
@@ -245,27 +245,16 @@
             </button>
           </div>
 
-          <div class="row-level" aria-label="Livello">
-            <button class="circle-btn" id="btnL1" type="button">L1</button>
-            <button class="circle-btn" id="btnL2" type="button">L2</button>
-            <button class="circle-btn" id="btnL3" type="button">L3</button>
+          
+          <div class="therapies-wrap" id="therapiesWrap" aria-label="Terapie"></div>
+
+          <div class="therapy-add-row" aria-label="Aggiungi terapia">
+            <button class="plus-btn" id="btnAddTherapy" type="button" aria-label="Aggiungi terapia">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg>
+            </button>
           </div>
 
-          <div class="row2">
-            <input class="field" id="patStart" type="date" placeholder="Data inizio" />
-            <input class="field" id="patEnd" type="date" placeholder="Data fine" />
-          </div>
-
-          <div class="row-days" aria-label="Giorni settimana">
-            <button class="day-btn" data-day="LU" type="button"><span class="day">LU</span><span class="time" id="t_LU">—</span></button>
-            <button class="day-btn" data-day="MA" type="button"><span class="day">MA</span><span class="time" id="t_MA">—</span></button>
-            <button class="day-btn" data-day="ME" type="button"><span class="day">ME</span><span class="time" id="t_ME">—</span></button>
-            <button class="day-btn" data-day="GI" type="button"><span class="day">GI</span><span class="time" id="t_GI">—</span></button>
-            <button class="day-btn" data-day="VE" type="button"><span class="day">VE</span><span class="time" id="t_VE">—</span></button>
-            <button class="day-btn" data-day="SA" type="button"><span class="day">SA</span><span class="time" id="t_SA">—</span></button>
-          </div>
-
-          <button class="pill-btn pill-blue" id="btnPatSave" type="submit">salva</button>
+<button class="pill-btn pill-blue" id="btnPatSave" type="submit">salva</button>
         </form>
       </div>
     </section>
@@ -482,6 +471,6 @@
     </div>
 
   <script src="./config.js"></script>
-  <script src="./app.js?v=1.093"></script>
+  <script src="./app.js?v=1.094"></script>
 </body>
 </html>

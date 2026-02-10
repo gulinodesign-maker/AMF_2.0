@@ -1,7 +1,7 @@
-/* AMF_1.093 */
+/* AMF_1.094 */
 (() => {
-    const BUILD = "AMF_1.093";
-    const DISPLAY = "1.093";
+    const BUILD = "AMF_1.094";
+    const DISPLAY = "1.094";
 
   // --- Helpers
   const $ = (sel) => document.querySelector(sel);
@@ -2090,56 +2090,69 @@ function buildCalendarSlotsFromPatients(patients) {
   (patients || []).forEach((p) => {
     if (!p || p.isDeleted) return;
 
-    const raw = p.giorni_settimana || p.giorni || "";
-    if (!raw) return;
+    const therapies = parseTherapiesFromPatient_(p);
+    if (!Array.isArray(therapies) || !therapies.length) return;
 
-    const map = parseGiorniMap(raw);
-    if (!map || typeof map !== "object") return;
+    therapies.forEach((th) => {
+      if (!th) return;
 
-    // weekday keys for this patient
-    const weekdayEntries = [];
-    Object.keys(map).forEach((k) => {
-      const dayLabel = __normDayLabel(k);
-      let wk = DAY_LABEL_TO_KEY[dayLabel];
+      const map = th.giorni_map && typeof th.giorni_map === "object" ? th.giorni_map : {};
+      if (!Object.keys(map).length) return;
 
-      if (wk == null && /^\d+$/.test(dayLabel)) {
-        const n = parseInt(dayLabel, 10);
-        if (n === 7) wk = 0; // Sunday
-        else if (n >= 0 && n <= 6) wk = n;
-        else if (n >= 1 && n <= 6) wk = n;
-      }
+      // weekday keys for this therapy
+      const weekdayEntries = [];
+      Object.keys(map).forEach((k) => {
+        const dayLabel = __normDayLabel(k);
+        let wk = DAY_LABEL_TO_KEY[dayLabel];
 
-      if (wk == null) return;
-      weekdayEntries.push({ wk, key: k });
-    });
+        if (wk == null && /^\d+$/.test(dayLabel)) {
+          const n = parseInt(dayLabel, 10);
+          if (n === 7) wk = 0; // Sunday
+          else if (n >= 0 && n <= 6) wk = n;
+          else if (n >= 1 && n <= 6) wk = n;
+        }
 
-    if (!weekdayEntries.length) return;
-
-    for (let dayNum = 1; dayNum <= 31; dayNum++) {
-      const cellDate = dateForDayNumber(dayNum);
-      if (!cellDate) continue;
-
-      const wk = weekdayKeyForDate(cellDate);
-
-      weekdayEntries.forEach(({ wk: wk2, key }) => {
-        if (wk2 !== wk) return;
-
-        if (!inRange(cellDate, p.data_inizio, p.data_fine)) return;
-
-        const times = normalizeTimeList(map[key]);
-        if (!times.length) return;
-
-        times.forEach((t) => {
-          const slotKey = `${dayNum}|${t}`;
-          const prev = slots.get(slotKey) || { count: 0, names: [], ids: [], tags: [] };
-          prev.count += 1;
-          prev.names.push(patientDisplayName(p) || "Paziente");
-          prev.ids.push(p.id);
-          prev.tags.push(getSocTagIndexById(p.societa_id || ""));
-          slots.set(slotKey, prev);
-        });
+        if (wk == null) return;
+        weekdayEntries.push({ wk, key: k });
       });
-    }
+
+      if (!weekdayEntries.length) return;
+
+      for (let dayNum = 1; dayNum <= 31; dayNum++) {
+        const cellDate = dateForDayNumber(dayNum);
+        if (!cellDate) continue;
+
+        const wk = weekdayKeyForDate(cellDate);
+
+        weekdayEntries.forEach(({ wk: wk2, key }) => {
+          if (wk2 !== wk) return;
+
+          if (!inRange(cellDate, th.data_inizio || p.data_inizio, th.data_fine || p.data_fine)) return;
+
+          const times = normalizeTimeList(map[key]);
+          if (!times.length) return;
+
+          times.forEach((t) => {
+            const slotKey = `${dayNum}|${t}`;
+            const prev = slots.get(slotKey) || { count: 0, names: [], ids: [], tags: [] };
+
+            // Dedup: non permettere lo stesso paziente due volte nello stesso slot
+            const pid = p.id != null ? String(p.id) : "";
+            const exists = Array.isArray(prev.ids) && prev.ids.some((x) => String(x) === pid);
+            if (!exists) {
+              prev.names.push(patientDisplayName(p) || "Paziente");
+              prev.ids.push(pid);
+              prev.tags.push(getSocTagIndexById(p.societa_id || ""));
+              prev.count = prev.ids.length;
+              slots.set(slotKey, prev);
+            } else {
+              prev.count = Array.isArray(prev.ids) ? prev.ids.length : Math.max(0, prev.count || 0);
+              slots.set(slotKey, prev);
+            }
+          });
+        });
+      }
+    });
   });
 
   return slots;
@@ -3714,7 +3727,7 @@ function formatItMonth(dateObj) {
     const rowSoc = document.querySelector("#viewPatientForm .row-soc");
     if (rowSoc) rowSoc.classList.toggle("no-drop", !patientEditEnabled);
 
-    const ids = ["patName","patStart","patEnd"];
+    const ids = ["patName"];
     ids.forEach(id => {
       const el = $("#" + id);
       if (el) el.disabled = !patientEditEnabled;
@@ -3752,9 +3765,9 @@ function formatItMonth(dateObj) {
       else btnPick.removeAttribute("hidden");
       btnPick.toggleAttribute("disabled", !patientEditEnabled);
     }
-    document.querySelectorAll(".circle-btn").forEach(b => b.toggleAttribute("disabled", !patientEditEnabled));
-    document.querySelectorAll(".day-btn").forEach(b => b.toggleAttribute("disabled", !patientEditEnabled));
-    $("#btnPatSave")?.toggleAttribute("disabled", !patientEditEnabled);
+    try { renderTherapiesUI_(); } catch (_) {}
+
+        $("#btnPatSave")?.toggleAttribute("disabled", !patientEditEnabled);
     if (!patientEditEnabled) $("#btnPatSave")?.classList.add("pill-gray");
     else $("#btnPatSave")?.classList.remove("pill-gray");
 
@@ -3894,7 +3907,6 @@ function formatItMonth(dateObj) {
   const modalPickTime = $("#modalPickTime");
   const timePickList = $("#timePickList");
   const btnPickTimeClose = $("#btnPickTimeClose");
-  let activeDayForTime = null;
 
   // ---- Modal errore terapia (no sovrapposizioni)
   const modalTherapyError = $("#modalTherapyError");
@@ -3951,20 +3963,20 @@ function formatItMonth(dateObj) {
       if (!p || p.isDeleted) continue;
       if (selfId && String(p.id) === String(selfId)) continue;
 
-      if (!__rangesOverlap(curStart, curEnd, p.data_inizio, p.data_fine)) continue;
+      const therapies = parseTherapiesFromPatient_(p);
+      for (const th of (therapies || [])) {
+        if (!th) continue;
+        if (!__rangesOverlap(curStart, curEnd, th.data_inizio, th.data_fine)) continue;
 
-      const raw = p.giorni_settimana || p.giorni || "";
-      if (!raw) continue;
-      const map = parseGiorniMap(raw);
-      if (!map || typeof map !== "object") continue;
+        const map = th.giorni_map && typeof th.giorni_map === "object" ? th.giorni_map : {};
+        for (const k of Object.keys(map)) {
+          const kDayKey = __dayToKey(k);
+          if (!kDayKey || kDayKey !== dayKeyWanted) continue;
 
-      for (const k of Object.keys(map)) {
-        const kDayKey = __dayToKey(k);
-        if (!kDayKey || kDayKey !== dayKeyWanted) continue;
-
-        const times = normalizeTimeList(map[k]);
-        for (const tt of (times || [])) {
-          if (normTime(tt) === tWanted) return true;
+          const times = normalizeTimeList(map[k]);
+          for (const tt of (times || [])) {
+            if (normTime(tt) === tWanted) return true;
+          }
         }
       }
     }
@@ -3996,6 +4008,65 @@ function formatItMonth(dateObj) {
   btnPickTimeClose?.addEventListener("click", closePickTimeModal);
   modalPickTime?.addEventListener("click", (e) => { if (e.target === modalPickTime) closePickTimeModal(); });
 
+  const therapiesWrap = $("#therapiesWrap");
+  const btnAddTherapy = $("#btnAddTherapy");
+
+  let activeTherapyIndex = 0;
+  let activeDayForTime = "";
+
+  function normalizeTherapy_(t) {
+    const o = (t && typeof t === "object") ? Object.assign({}, t) : {};
+    o.livello = String(o.livello || o.level || "").trim();
+    o.data_inizio = String(o.data_inizio || o.start || "").trim();
+    o.data_fine = String(o.data_fine || o.end || "").trim();
+    // giorni_settimana può essere oggetto o JSON string
+    const raw = (o.giorni_settimana !== undefined) ? o.giorni_settimana : (o.giorni !== undefined ? o.giorni : (o.giorni_map || {}));
+    const map = parseGiorniMap(raw);
+    o.giorni_map = map && typeof map === "object" ? map : {};
+    return o;
+  }
+
+  function parseTherapiesFromPatient_(p) {
+    if (!p) return [normalizeTherapy_({})];
+
+    // Nuova colonna: "terapie" (JSON array)
+    const raw = p.terapie !== undefined ? p.terapie : (p.terapia !== undefined ? p.terapia : null);
+    let arr = null;
+    if (raw && typeof raw === "string") {
+      try {
+        const j = JSON.parse(raw);
+        if (Array.isArray(j)) arr = j;
+      } catch (_) { arr = null; }
+    } else if (Array.isArray(raw)) {
+      arr = raw;
+    }
+
+    if (Array.isArray(arr) && arr.length) {
+      const out = arr.map(normalizeTherapy_).filter(Boolean);
+      return out.length ? out : [normalizeTherapy_({})];
+    }
+
+    // Fallback legacy: campi singoli
+    const legacy = normalizeTherapy_({
+      livello: p.livello || "",
+      data_inizio: p.data_inizio || "",
+      data_fine: p.data_fine || "",
+      giorni_settimana: p.giorni_settimana || p.giorni || "{}"
+    });
+    return [legacy];
+  }
+
+  function ensureCurrentTherapies_() {
+    if (!currentPatient) currentPatient = {};
+    if (!Array.isArray(currentPatient.terapie_arr) || !currentPatient.terapie_arr.length) {
+      currentPatient.terapie_arr = parseTherapiesFromPatient_(currentPatient);
+    }
+    // Normalizza sempre
+    currentPatient.terapie_arr = currentPatient.terapie_arr.map(normalizeTherapy_);
+    if (!currentPatient.terapie_arr.length) currentPatient.terapie_arr = [normalizeTherapy_({})];
+    if (activeTherapyIndex >= currentPatient.terapie_arr.length) activeTherapyIndex = 0;
+  }
+
   function buildTimes() {
     const times = ["—"];
     for (let h=6; h<=21; h++) {
@@ -4005,12 +4076,19 @@ function formatItMonth(dateObj) {
     return times;
   }
 
-  function openTimePickerForDay(day) {
+  async function openTimePickerForDay(therapyIdx, day) {
     if (!patientEditEnabled) return;
-    activeDayForTime = day;
+    ensureCurrentTherapies_();
+    activeTherapyIndex = Math.max(0, Math.min((currentPatient.terapie_arr.length - 1), Number(therapyIdx) || 0));
+    activeDayForTime = String(day || "").trim();
+    if (!activeDayForTime) return;
+
+    const th = currentPatient.terapie_arr[activeTherapyIndex];
+    const currentSel = (th && th.giorni_map && th.giorni_map[activeDayForTime]) ? normTime(th.giorni_map[activeDayForTime]) : "—";
+
     if (!timePickList) return;
     timePickList.innerHTML = "";
-    const currentSel = (currentPatient && currentPatient.giorni_map && currentPatient.giorni_map[day]) ? normTime(currentPatient.giorni_map[day]) : "—";
+
     buildTimes().forEach((t) => {
       const btn = document.createElement("button");
       btn.type = "button";
@@ -4018,137 +4096,234 @@ function formatItMonth(dateObj) {
       if (t === currentSel) cls += " selected";
       btn.className = cls;
       btn.textContent = t;
+
       btn.addEventListener("click", async () => {
-        // UI: evidenzia selezione
-        timePickList.querySelectorAll(".pill-btn.selected").forEach((el) => el.classList.remove("selected")); 
+        timePickList.querySelectorAll(".pill-btn.selected").forEach((el) => el.classList.remove("selected"));
         btn.classList.add("selected");
-        if (!currentPatient) currentPatient = {};
-        if (!currentPatient.giorni_map) currentPatient.giorni_map = {};
-        const curStart = ($("#patStart")?.value || (currentPatient && currentPatient.data_inizio) || "").trim();
-        const curEnd = ($("#patEnd")?.value || (currentPatient && currentPatient.data_fine) || "").trim();
+
+        ensureCurrentTherapies_();
         const selfId = currentPatient && currentPatient.id ? currentPatient.id : null;
+        const therapy = currentPatient.terapie_arr[activeTherapyIndex] || normalizeTherapy_({});
+        const curStart = String(therapy.data_inizio || "").trim();
+        const curEnd = String(therapy.data_fine || "").trim();
 
         if (t !== "—") {
-          const conflict = await hasTherapyConflictSlot(day, t, curStart, curEnd, selfId);
+          const conflict = await hasTherapyConflictSlot(activeDayForTime, t, curStart, curEnd, selfId);
           if (conflict) {
             openTherapyErrorModal("Errore: esiste già una terapia per un altro paziente nello stesso giorno e alla stessa ora.");
             return;
           }
         }
 
-        if (t === "—") {
-          delete currentPatient.giorni_map[day];
-        } else {
-          currentPatient.giorni_map[day] = t;
-        }
-        applyDayUI();
+        if (!therapy.giorni_map) therapy.giorni_map = {};
+        if (t === "—") delete therapy.giorni_map[activeDayForTime];
+        else therapy.giorni_map[activeDayForTime] = t;
+
+        currentPatient.terapie_arr[activeTherapyIndex] = normalizeTherapy_(therapy);
+        renderTherapiesUI_();
         closePickTimeModal();
       });
+
       timePickList.appendChild(btn);
     });
+
     openPickTimeModal();
   }
 
-  function applyDayUI() {
-    const map = (currentPatient && currentPatient.giorni_map) ? currentPatient.giorni_map : {};
-    document.querySelectorAll(".day-btn").forEach((btn) => {
-      const d = btn.getAttribute("data-day");
-      const t = map && map[d] ? map[d] : "—";
-      btn.classList.toggle("active", t !== "—");
-      const lab = $("#t_" + d);
-      if (lab) lab.textContent = t;
+  function renderTherapiesUI_() {
+    if (!therapiesWrap) return;
+    ensureCurrentTherapies_();
+    therapiesWrap.replaceChildren();
+
+    const arr = currentPatient.terapie_arr;
+
+    const frag = document.createDocumentFragment();
+
+    for (let i = 0; i < arr.length; i++) {
+      const th = arr[i];
+
+      const card = document.createElement("div");
+      card.className = "therapy-card";
+      card.dataset.tidx = String(i);
+
+      const head = document.createElement("div");
+      head.className = "therapy-head";
+
+      const title = document.createElement("div");
+      title.className = "therapy-title";
+      title.textContent = `Terapia ${i + 1}`;
+
+      const del = document.createElement("button");
+      del.type = "button";
+      del.className = "therapy-del";
+      del.setAttribute("aria-label", "Rimuovi terapia");
+      del.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12"></path><path d="M18 6l-12 12"></path></svg>';
+      if (i === 0) del.style.display = "none";
+
+      head.appendChild(title);
+      head.appendChild(del);
+
+      const levelRow = document.createElement("div");
+      levelRow.className = "therapy-level-row";
+      ["L1","L2","L3"].forEach((lv) => {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "therapy-level-btn" + (String(th.livello || "") === lv ? " active" : "");
+        b.dataset.level = lv;
+        b.textContent = lv;
+        levelRow.appendChild(b);
+      });
+
+      const dateRow = document.createElement("div");
+      dateRow.className = "therapy-date-row";
+      const inpStart = document.createElement("input");
+      inpStart.type = "date";
+      inpStart.className = "field";
+      inpStart.placeholder = "Data inizio";
+      inpStart.value = fmtIsoDate(th.data_inizio || "");
+      inpStart.dataset.role = "start";
+
+      const inpEnd = document.createElement("input");
+      inpEnd.type = "date";
+      inpEnd.className = "field";
+      inpEnd.placeholder = "Data fine";
+      inpEnd.value = fmtIsoDate(th.data_fine || "");
+      inpEnd.dataset.role = "end";
+
+      dateRow.appendChild(inpStart);
+      dateRow.appendChild(inpEnd);
+
+      const daysRow = document.createElement("div");
+      daysRow.className = "row-days";
+      daysRow.setAttribute("aria-label", "Giorni settimana");
+
+      ["LU","MA","ME","GI","VE","SA"].forEach((d) => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "day-btn";
+        btn.dataset.day = d;
+        btn.dataset.tidx = String(i);
+
+        const daySpan = document.createElement("span");
+        daySpan.className = "day";
+        daySpan.textContent = d;
+
+        const timeSpan = document.createElement("span");
+        timeSpan.className = "time";
+        const t = (th.giorni_map && th.giorni_map[d]) ? th.giorni_map[d] : "—";
+        timeSpan.textContent = t || "—";
+
+        if (t && t !== "—") btn.classList.add("active");
+
+        btn.appendChild(daySpan);
+        btn.appendChild(timeSpan);
+        daysRow.appendChild(btn);
+      });
+
+      // Handlers (per-card)
+      del.addEventListener("click", () => {
+        if (!patientEditEnabled) return;
+        ensureCurrentTherapies_();
+        if (i === 0) return;
+        currentPatient.terapie_arr.splice(i, 1);
+        renderTherapiesUI_();
+      });
+
+      levelRow.querySelectorAll(".therapy-level-btn").forEach((b) => {
+        b.addEventListener("click", () => {
+          if (!patientEditEnabled) return;
+          ensureCurrentTherapies_();
+          const lv = b.dataset.level || "";
+          const th2 = currentPatient.terapie_arr[i] || normalizeTherapy_({});
+          th2.livello = lv;
+          currentPatient.terapie_arr[i] = normalizeTherapy_(th2);
+          renderTherapiesUI_();
+        });
+      });
+
+      const onDateChange = () => {
+        if (!patientEditEnabled) return;
+        ensureCurrentTherapies_();
+        const th2 = currentPatient.terapie_arr[i] || normalizeTherapy_({});
+        th2.data_inizio = String(inpStart.value || "").trim();
+        th2.data_fine = String(inpEnd.value || "").trim();
+        currentPatient.terapie_arr[i] = normalizeTherapy_(th2);
+      };
+      inpStart.addEventListener("change", onDateChange);
+      inpEnd.addEventListener("change", onDateChange);
+
+      // Day click / long-press remove
+      daysRow.querySelectorAll(".day-btn").forEach((btn) => {
+        let lpTimer = null;
+        let lpFired = false;
+
+        const clearLP = () => { if (lpTimer) { clearTimeout(lpTimer); lpTimer = null; } };
+
+        btn.addEventListener("pointerdown", () => {
+          if (!patientEditEnabled) return;
+          lpFired = false;
+          clearLP();
+          lpTimer = setTimeout(() => {
+            lpFired = true;
+            ensureCurrentTherapies_();
+            const th2 = currentPatient.terapie_arr[i] || normalizeTherapy_({});
+            if (!th2.giorni_map) th2.giorni_map = {};
+            const day = String(btn.dataset.day || "");
+            if (day && th2.giorni_map[day]) {
+              delete th2.giorni_map[day];
+              currentPatient.terapie_arr[i] = normalizeTherapy_(th2);
+              renderTherapiesUI_();
+              toast("Giorno rimosso");
+            }
+          }, 500);
+        });
+
+        btn.addEventListener("pointerup", clearLP);
+        btn.addEventListener("pointercancel", clearLP);
+        btn.addEventListener("pointerleave", clearLP);
+
+        btn.addEventListener("click", (e) => {
+          if (lpFired) {
+            e.preventDefault();
+            e.stopPropagation();
+            lpFired = false;
+            return;
+          }
+          const d = btn.dataset.day;
+          openTimePickerForDay(i, d);
+        });
+      });
+
+      card.appendChild(head);
+      card.appendChild(levelRow);
+      card.appendChild(dateRow);
+      card.appendChild(daysRow);
+
+      frag.appendChild(card);
+    }
+
+    therapiesWrap.appendChild(frag);
+
+    // abilita/disabilita in base allo stato
+    therapiesWrap.querySelectorAll("input,button").forEach((el) => {
+      if (el && el.id === "btnPatDelete") return;
+      el.toggleAttribute("disabled", !patientEditEnabled);
     });
+
+    // Add button visibile solo in modifica
+    if (btnAddTherapy) {
+      btnAddTherapy.toggleAttribute("disabled", !patientEditEnabled);
+      btnAddTherapy.style.display = patientEditEnabled ? "" : "none";
+    }
   }
 
-  document.querySelectorAll(".day-btn").forEach((btn) => {
-    let lpTimer = null;
-    let lpFired = false;
-
-    const clearLP = () => {
-      if (lpTimer) { clearTimeout(lpTimer); lpTimer = null; }
-    };
-
-    btn.addEventListener("pointerdown", () => {
-      if (!patientEditEnabled) return;
-      lpFired = false;
-      clearLP();
-      lpTimer = setTimeout(async () => {
-        lpFired = true;
-        const d = btn.getAttribute("data-day");
-        if (!d) return;
-        if (!currentPatient) currentPatient = {};
-        if (!currentPatient.giorni_map) currentPatient.giorni_map = {};
-        if (!currentPatient.giorni_map[d]) return;
-
-        delete currentPatient.giorni_map[d];
-        applyDayUI();
-
-        // Persist immediately for existing patients
-        try {
-          const user = getSession();
-          if (!user) return;
-
-          const nome_cognome = ($("#patName")?.value || currentPatient.nome_cognome || "").trim();
-          const societa = ($("#patSoc")?.value || currentPatient.societa || "").trim();
-          const societa_id = ($("#patSocId")?.value || "").trim();
-          const societa_nome = societa;
-          const data_inizio = ($("#patStart")?.value || currentPatient.data_inizio || "").trim();
-          const data_fine = ($("#patEnd")?.value || currentPatient.data_fine || "").trim();
-          const liv = level || (currentPatient && currentPatient.livello) || "";
-
-          if (!currentPatient.id) return; // nothing to persist yet
-          if (!nome_cognome || !societa || !liv) return;
-
-          const payload = {
-      nome_cognome,
-      address,
-            societa_id: societa_id,
-            societa_nome: societa_nome,
-            livello: liv,
-            data_inizio,
-            data_fine,
-            giorni_settimana: JSON.stringify(currentPatient.giorni_map || {}),
-            utente_id: user.id
-          };
-
-          const ok = await ensureApiReady();
-          if (!ok) return;
-
-          await api("updatePatient", { userId: user.id, id: currentPatient.id, payload: JSON.stringify(payload) });
-          try { await loadPatients(); } catch {}
-          toast("Giorno rimosso");
-        } catch {
-          toast("Errore rimozione");
-        }
-      }, 500);
-    });
-
-    btn.addEventListener("pointerup", clearLP);
-    btn.addEventListener("pointercancel", clearLP);
-    btn.addEventListener("pointerleave", clearLP);
-
-    btn.addEventListener("click", (e) => {
-      if (lpFired) {
-        e.preventDefault();
-        e.stopPropagation();
-        lpFired = false;
-        return;
-      }
-      const d = btn.getAttribute("data-day");
-      if (d) openTimePickerForDay(d);
-    });
+  btnAddTherapy?.addEventListener("click", () => {
+    if (!patientEditEnabled) return;
+    ensureCurrentTherapies_();
+    currentPatient.terapie_arr.push(normalizeTherapy_({}));
+    renderTherapiesUI_();
+    try { window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" }); } catch (_) {}
   });
-// ---- Level selection
-  let level = "";
-  function setLevel(l) {
-    level = l;
-    ["1","2","3"].forEach(n => {
-      $("#btnL"+n)?.classList.toggle("active", "L"+n === l);
-    });
-  }
-  $("#btnL1")?.addEventListener("click", () => patientEditEnabled && setLevel("L1"));
-  $("#btnL2")?.addEventListener("click", () => patientEditEnabled && setLevel("L2"));
-  $("#btnL3")?.addEventListener("click", () => patientEditEnabled && setLevel("L3"));
 
   // ---- Open forms
   function openPatientCreate() {
@@ -4157,16 +4332,16 @@ function formatItMonth(dateObj) {
       openPatientsFlow();
       return;
     }
-    currentPatient = { id: null, giorni_map: {} };
-    level = "";
+
+    currentPatient = { id: null, terapie_arr: [normalizeTherapy_({})] };
+    activeTherapyIndex = 0;
+
     $("#patName").value = "";
     $("#patAddress").value = "";
     $("#patSoc").value = "";
     $("#patSocId").value = "";
-    $("#patStart").value = "";
-    $("#patEnd").value = "";
-    setLevel("");
-    applyDayUI();
+
+    renderTherapiesUI_();
     showView("patientForm");
     setPatientFormEnabled(true);
   }
@@ -4177,20 +4352,17 @@ function formatItMonth(dateObj) {
       openPatientsFlow();
       return;
     }
+
     currentPatient = Object.assign({}, p || {});
-    // parse giorni_settimana JSON map (se presente)
-    const raw = currentPatient.giorni_settimana || currentPatient.giorni || null;
-    const map = parseGiorniMap(raw);
-    currentPatient.giorni_map = map;
-    level = String(currentPatient.livello || "");
+    currentPatient.terapie_arr = parseTherapiesFromPatient_(currentPatient);
+    activeTherapyIndex = 0;
+
     $("#patName").value = currentPatient.nome_cognome || "";
     $("#patAddress").value = currentPatient.address || "";
     $("#patSocId").value = currentPatient.societa_id ? String(currentPatient.societa_id) : "";
     $("#patSoc").value = String(currentPatient.societa_nome || currentPatient.societa || getSocNameById($("#patSocId").value) || "").trim();
-    $("#patStart").value = fmtIsoDate(currentPatient.data_inizio || "");
-    $("#patEnd").value = fmtIsoDate(currentPatient.data_fine || "");
-    setLevel(level);
-    applyDayUI();
+
+    renderTherapiesUI_();
     showView("patientForm");
     setPatientFormEnabled(false); // view-only finché non premi modifica
   }
@@ -4248,27 +4420,55 @@ $("#btnPatEdit")?.addEventListener("click", () => setPatientFormEnabled(true));
     const societa = ($("#patSoc")?.value || "").trim();
     const societa_id = ($("#patSocId")?.value || "").trim();
     const societa_nome = societa;
-    const data_inizio = ($("#patStart")?.value || "").trim();
-    const data_fine = ($("#patEnd")?.value || "").trim();
-
-    // Validazione: evita sovrapposizioni terapia (stesso giorno + stessa ora)
-    try {
-      const selfId = currentPatient && currentPatient.id ? currentPatient.id : null;
-      const map = (currentPatient && currentPatient.giorni_map) ? currentPatient.giorni_map : {};
-      const v = await validateTherapyMapNoOverlap(selfId, map, data_inizio, data_fine);
-      if (!v.ok) {
-        openTherapyErrorModal("Errore: terapia sovrapposta (stesso giorno e stessa ora).");
-        return;
-      }
-    } catch (_) {
-      // Se la validazione fallisce per motivi tecnici, non bloccare il salvataggio.
-    }
 
     if (!nome_cognome) { toast("Inserisci il nome"); return; }
     if (!address) { toast("Inserisci l\u2019indirizzo"); return; }
     if (!societa_id) { toast("Seleziona la società"); return; }
-    if (!level) { toast("Seleziona il livello"); return; }
 
+    ensureCurrentTherapies_();
+    const therapies = (currentPatient && Array.isArray(currentPatient.terapie_arr)) ? currentPatient.terapie_arr.map(normalizeTherapy_) : [normalizeTherapy_({})];
+
+    // Validazioni base
+    for (let i = 0; i < therapies.length; i++) {
+      const th = therapies[i] || {};
+      if (!String(th.livello || "").trim()) { toast(`Seleziona il livello in Terapia ${i + 1}`); return; }
+    }
+
+    // Validazione: evita sovrapposizioni TRA le terapie dello stesso paziente
+    try {
+      for (let i = 0; i < therapies.length; i++) {
+        for (let j = i + 1; j < therapies.length; j++) {
+          const a = therapies[i] || {};
+          const b = therapies[j] || {};
+          if (!__rangesOverlap(a.data_inizio, a.data_fine, b.data_inizio, b.data_fine)) continue;
+          const amap = a.giorni_map || {};
+          const bmap = b.giorni_map || {};
+          for (const k of Object.keys(amap)) {
+            const tA = normTime(amap[k]);
+            const tB = normTime(bmap[k]);
+            if (tA && tB && tA !== "—" && tA === tB) {
+              openTherapyErrorModal("Errore: due terapie dello stesso paziente hanno lo stesso giorno e la stessa ora.");
+              return;
+            }
+          }
+        }
+      }
+    } catch (_) {}
+
+    // Validazione: evita sovrapposizioni con altri pazienti (stesso giorno + stessa ora)
+    try {
+      const selfId = currentPatient && currentPatient.id ? currentPatient.id : null;
+      for (let i = 0; i < therapies.length; i++) {
+        const th = therapies[i] || {};
+        const v = await validateTherapyMapNoOverlap(selfId, th.giorni_map || {}, th.data_inizio || "", th.data_fine || "");
+        if (!v.ok) {
+          openTherapyErrorModal("Errore: terapia sovrapposta (stesso giorno e stessa ora).");
+          return;
+        }
+      }
+    } catch (_) {
+      // Se la validazione fallisce per motivi tecnici, non bloccare il salvataggio.
+    }
 
     // Geotag automatico (scrittura/modifica): tenta acquisizione senza tasto dedicato
     let geo = null;
@@ -4277,16 +4477,29 @@ $("#btnPatEdit")?.addEventListener("click", () => setPatientFormEnabled(true));
       geo = await acquireGeoOnce();
     } catch (_) { geo = null; }
 
+    const t0 = therapies[0] || normalizeTherapy_({});
+
     const payload = {
       nome_cognome,
       address,
       societa,
       societa_id: societa_id,
       societa_nome: societa_nome,
-      livello: level,
-      data_inizio,
-      data_fine,
-      giorni_settimana: JSON.stringify((currentPatient && currentPatient.giorni_map) ? currentPatient.giorni_map : {}),
+
+      // compatibilità: campi "legacy" dalla Terapia 1
+      livello: t0.livello || "",
+      data_inizio: String(t0.data_inizio || "").trim(),
+      data_fine: String(t0.data_fine || "").trim(),
+      giorni_settimana: JSON.stringify(t0.giorni_map || {}),
+
+      // nuova colonna: terapie (array JSON)
+      terapie: JSON.stringify(therapies.map((t) => ({
+        livello: String(t.livello || "").trim(),
+        data_inizio: String(t.data_inizio || "").trim(),
+        data_fine: String(t.data_fine || "").trim(),
+        giorni_settimana: (t.giorni_map && typeof t.giorni_map === "object") ? t.giorni_map : {}
+      }))),
+
       geo_lat: (geo ? geo.lat : ""),
       geo_lng: (geo ? geo.lng : ""),
       geo_accuracy: (geo && geo.acc != null ? geo.acc : ""),
@@ -4310,6 +4523,7 @@ $("#btnPatEdit")?.addEventListener("click", () => setPatientFormEnabled(true));
       toast(String(err && err.message ? err.message : "Errore"));
     }
   });
+
 
 
 
@@ -4799,7 +5013,7 @@ async function renderSocietaDeleteList() {
   // PWA (iOS): registra Service Worker
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {
-      navigator.serviceWorker.register("./service-worker.js?v=1.093").catch(() => {});
+      navigator.serviceWorker.register("./service-worker.js?v=1.094").catch(() => {});
     });
   }
 })();

@@ -1,4 +1,4 @@
-/* AMF_1.093 */
+/* AMF_1.094 */
 /* Montalto PMS - PWA iOS / GitHub Pages */
 :root{
   --text: #1b1f23;
@@ -1016,6 +1016,144 @@ select.field{ appearance: none; }
 .day-btn.active .day,
 .day-btn.active .time{
   color:#fff;
+}
+
+
+
+/* --- Terapie multiple (Scheda paziente) --- */
+.therapies-wrap{
+  width:100%;
+  display:flex;
+  flex-direction:column;
+  gap: 14px;
+  margin: 8px 0 6px;
+}
+
+.therapy-card{
+  width:100%;
+  border-radius: 22px;
+  border: 1px solid rgba(0,0,0,.08);
+  background: rgba(0,0,0,.08);
+  padding: 14px;
+}
+
+.therapy-head{
+  width:100%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  position: relative;
+  margin: 2px 0 10px;
+}
+
+.therapy-title{
+  font-size: 22px;
+  font-weight: 900;
+  letter-spacing: .2px;
+  color: rgba(27,31,35,.92);
+}
+
+.therapy-del{
+  position:absolute;
+  right: 0;
+  top: 0;
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  border: 1px solid rgba(0,0,0,.08);
+  background: rgba(42,116,184,.80);
+  background-color: rgba(42,116,184,.80);
+  display:grid;
+  place-items:center;
+  cursor:pointer;
+  padding:0;
+  opacity: .80;
+}
+.therapy-del svg{
+  width: 18px;
+  height: 18px;
+  fill:none;
+  stroke: rgba(255,255,255,.98);
+  stroke-width: 2.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.therapy-level-row{
+  width:100%;
+  display:flex;
+  flex-wrap:nowrap;
+  align-items:center;
+  justify-content:space-between;
+  gap: 14px;
+  margin: 6px 0 10px;
+}
+.therapy-level-btn{
+  flex: 1 1 0;
+  min-width: 0;
+  height: 54px;
+  border-radius: 18px;
+  border: 1px solid rgba(0,0,0,.10);
+  background: rgba(255,255,255,.80);
+  background-color: rgba(255,255,255,.80);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-weight: 900;
+  letter-spacing: .2px;
+  color: var(--primary);
+  cursor:pointer;
+  padding:0;
+  opacity: .80;
+}
+.therapy-level-btn.active{
+  background: rgba(42,116,184,.80);
+  background-color: rgba(42,116,184,.80);
+  color: #fff;
+}
+
+.therapy-date-row{
+  width:100%;
+  display:flex;
+  flex-wrap:nowrap;
+  align-items:center;
+  justify-content:center;
+  gap: 12px;
+  margin: 4px 0 8px;
+}
+.therapy-date-row .field{
+  flex:1 1 0;
+  min-width:0;
+}
+
+.therapy-add-row{
+  width:100%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  margin: 12px 0 8px;
+}
+
+.plus-btn{
+  width: 58px;
+  height: 58px;
+  border-radius: 18px;
+  border: 1px solid rgba(0,0,0,.08);
+  background: var(--white80);
+  display:grid;
+  place-items:center;
+  cursor:pointer;
+  padding:0;
+  opacity: .80;
+}
+.plus-btn svg{
+  width: 22px;
+  height: 22px;
+  fill:none;
+  stroke: var(--primary);
+  stroke-width: 2.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 /* modali pick */
