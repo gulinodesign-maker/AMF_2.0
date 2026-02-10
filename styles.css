@@ -1,4 +1,4 @@
-/* AMF_2.003 */
+/* AMF_1.093 */
 /* Montalto PMS - PWA iOS / GitHub Pages */
 :root{
   --text: #1b1f23;
@@ -1907,26 +1907,3 @@ body.cal-dragging { touch-action: none; }
 #viewCalendar .cal-body-scroll{
   height: 100%;
 }
-
-
-/* --- Terapie (AMF_2.000) --- */
-
-.therapy-section{ margin-top:14px; }
-.therapy-head{ display:flex; align-items:center; justify-content:space-between; }
-.therapy-title{ font-size:14px; font-weight:600; opacity:0.85; }
-.therapy-list{ display:flex; flex-direction:column; gap:10px; margin-top:10px; }
-.therapy-item{ border:1px solid rgba(255,255,255,0.12); border-radius:14px; overflow:hidden; }
-.therapy-toggle{ width:100%; display:flex; align-items:center; justify-content:space-between; padding:10px 12px; background:rgba(255,255,255,0.08); border:0; color:inherit; opacity:0.95; }
-.therapy-body{ padding:10px 12px; display:none; }
-.therapy-item.open .therapy-body{ display:block; }
-.therapy-meta{ font-size:12px; opacity:0.75; }
-.therapy-row{ display:flex; gap:10px; margin-top:10px; }
-.therapy-row .field{ flex:1; }
-.weekday-row{ display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
-.weekday-btn{ padding:8px 10px; border-radius:12px; border:1px solid rgba(255,255,255,0.12); background:rgba(255,255,255,0.08); opacity:0.8; }
-.weekday-btn.on{ background:rgba(255,255,255,0.18); }
-.level-row{ display:flex; gap:10px; margin-top:10px; }
-.level-btn{ flex:1; border-radius:14px; padding:10px 0; border:1px solid rgba(255,255,255,0.12); background:rgba(255,255,255,0.08); opacity:0.8; }
-.level-btn.on{ background:rgba(255,255,255,0.18); }
-.therapy-actions{ display:flex; gap:10px; margin-top:12px; }
-.therapy-actions .pill-btn{ flex:1; }
