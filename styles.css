@@ -1,4 +1,4 @@
-/* AMF_1.093 */
+/* AMF_1.094 */
 /* Montalto PMS - PWA iOS / GitHub Pages */
 :root{
   --text: #1b1f23;
@@ -1906,4 +1906,74 @@ body.cal-dragging { touch-action: none; }
 #viewCalendar .cal-hours-scroll,
 #viewCalendar .cal-body-scroll{
   height: 100%;
+}
+
+
+
+/* --- Terapie multiple (AMF_1.094) --- */
+.therapies-wrap{
+  display:flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 14px;
+}
+
+.therapy-card{
+  padding: 16px;
+  background: rgba(255,255,255,.78);
+  border: 1px solid rgba(0,0,0,.08);
+  box-shadow: none;
+}
+
+.therapy-head{
+  display:flex;
+  align-items:center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.therapy-title{
+  font-size: 24px;
+  font-weight: 500;
+  letter-spacing: .2px;
+}
+
+.therapy-level-row{
+  display:flex;
+  gap: 12px;
+  align-items:center;
+  justify-content: space-between;
+  margin: 10px 0 14px 0;
+}
+
+.pill-mini{
+  height: 48px;
+  width: 100%;
+  border-radius: 18px;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.therapy-add-row{
+  display:flex;
+  justify-content: center;
+  margin: 16px 0 10px 0;
+}
+
+.add-therapy{
+  width: 64px;
+  height: 64px;
+}
+
+.therapy-remove{
+  width: 52px;
+  height: 52px;
+}
+
+.therapy-level-btn.active{
+  background: rgba(42,116,184,.80);
+  background-color: rgba(42,116,184,.80);
+  border-color: rgba(42,116,184,.85);
+  color: rgba(255,255,255,.92);
 }

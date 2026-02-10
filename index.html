@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Montalto PMS</title>
-  <link rel="stylesheet" href="./styles.css?v=1.093" />
+  <link rel="stylesheet" href="./styles.css?v=1.094" />
   <link rel="manifest" href="./manifest.json" />
   <meta name="theme-color" content="#2a74b8" />
   <link rel="apple-touch-icon" href="./assets/apple-touch-icon.png" />
@@ -245,27 +245,46 @@
             </button>
           </div>
 
-          <div class="row-level" aria-label="Livello">
-            <button class="circle-btn" id="btnL1" type="button">L1</button>
-            <button class="circle-btn" id="btnL2" type="button">L2</button>
-            <button class="circle-btn" id="btnL3" type="button">L3</button>
+          <div class="therapies-wrap" id="therapiesWrap" aria-label="Terapie"></div>
+
+          <div class="therapy-add-row">
+            <button class="mini-icon circle add-therapy" id="btnAddTherapy" type="button" aria-label="Aggiungi terapia">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg>
+            </button>
           </div>
 
-          <div class="row2">
-            <input class="field" id="patStart" type="date" placeholder="Data inizio" />
-            <input class="field" id="patEnd" type="date" placeholder="Data fine" />
-          </div>
+          <template id="therapyCardTpl">
+            <div class="therapy-card card card-form" data-therapy-index="__IDX__">
+              <div class="therapy-head">
+                <div class="therapy-title">Terapia __NUM__</div>
+                <button class="mini-icon circle therapy-remove" type="button" aria-label="Rimuovi terapia">
+                  <svg viewBox="0 0 24 24"><path d="M6 6l12 12"></path><path d="M18 6l-12 12"></path></svg>
+                </button>
+              </div>
 
-          <div class="row-days" aria-label="Giorni settimana">
-            <button class="day-btn" data-day="LU" type="button"><span class="day">LU</span><span class="time" id="t_LU">—</span></button>
-            <button class="day-btn" data-day="MA" type="button"><span class="day">MA</span><span class="time" id="t_MA">—</span></button>
-            <button class="day-btn" data-day="ME" type="button"><span class="day">ME</span><span class="time" id="t_ME">—</span></button>
-            <button class="day-btn" data-day="GI" type="button"><span class="day">GI</span><span class="time" id="t_GI">—</span></button>
-            <button class="day-btn" data-day="VE" type="button"><span class="day">VE</span><span class="time" id="t_VE">—</span></button>
-            <button class="day-btn" data-day="SA" type="button"><span class="day">SA</span><span class="time" id="t_SA">—</span></button>
-          </div>
+              <div class="therapy-level-row" aria-label="Livello">
+                <button class="pill-btn pill-mini therapy-level-btn" type="button" data-level="L1">L1</button>
+                <button class="pill-btn pill-mini therapy-level-btn" type="button" data-level="L2">L2</button>
+                <button class="pill-btn pill-mini therapy-level-btn" type="button" data-level="L3">L3</button>
+              </div>
 
-          <button class="pill-btn pill-blue" id="btnPatSave" type="submit">salva</button>
+              <div class="row2">
+                <input class="field therapy-start" type="date" placeholder="Data inizio" />
+                <input class="field therapy-end" type="date" placeholder="Data fine" />
+              </div>
+
+              <div class="row-days" aria-label="Giorni settimana">
+                <button class="day-btn" data-day="LU" type="button"><span class="day">LU</span><span class="time" data-time="LU">—</span></button>
+                <button class="day-btn" data-day="MA" type="button"><span class="day">MA</span><span class="time" data-time="MA">—</span></button>
+                <button class="day-btn" data-day="ME" type="button"><span class="day">ME</span><span class="time" data-time="ME">—</span></button>
+                <button class="day-btn" data-day="GI" type="button"><span class="day">GI</span><span class="time" data-time="GI">—</span></button>
+                <button class="day-btn" data-day="VE" type="button"><span class="day">VE</span><span class="time" data-time="VE">—</span></button>
+                <button class="day-btn" data-day="SA" type="button"><span class="day">SA</span><span class="time" data-time="SA">—</span></button>
+              </div>
+            </div>
+          </template>
+
+<button class="pill-btn pill-blue" id="btnPatSave" type="submit">salva</button>
         </form>
       </div>
     </section>
@@ -482,6 +501,6 @@
     </div>
 
   <script src="./config.js"></script>
-  <script src="./app.js?v=1.093"></script>
+  <script src="./app.js?v=1.094"></script>
 </body>
 </html>
