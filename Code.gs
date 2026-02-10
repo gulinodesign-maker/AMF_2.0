@@ -11,9 +11,9 @@
 const SPREADSHEET_ID = "1Bx8z3UvERM0ecN6WP6mrG01sGl_Pr3rdVW9Tjxp5vmA";
 
 const SHEETS = {
-  impostazioni: "impostazioni",
   utenti: "utenti",
   societa: "societa",
+  societa_tariffe: "societa_tariffe",
   pazienti: "pazienti",
   terapie: "terapie",
   sedute: "sedute"
@@ -134,23 +134,24 @@ function weekdayKey_(label) {
 }
 
 // -------------------- Schema / Headers --------------------
-const H_UTENTI = ["id","email","nome","ruolo","active_year","password_hash","createdAt","updatedAt","isDeleted"];
-const H_IMPOST = ["id","utente_id","active_year","payload_json","createdAt","updatedAt","isDeleted"];
-const H_SOC = ["id","utente_id","nome","tag_colore","tariffa_a","tariffa_b","tariffa_c","valuta","createdAt","updatedAt","isDeleted"];
-const H_PAZ = ["id","utente_id","societa_id","nome_cognome","indirizzo_casa","tariffa_tipo","data_inizio","data_fine","giorni_settimana_json","geo_lat","geo_lng","geo_accuracy","geo_ts","createdAt","updatedAt","isDeleted"];
-const H_TER = ["id","utente_id","paziente_id","valid_from","valid_to","weekdays","from_time","to_time","timezone","note","createdAt","updatedAt","isDeleted"];
-const H_SED = ["id","utente_id","paziente_id","tipo","status","from_date","from_time","to_date","to_time","importo","valuta","note","createdAt","updatedAt","isDeleted"];
+const H_UTENTI = ["id","nome","active_year","password_hash","createdAt","updatedAt","isDeleted"];
+const H_IMPOST = ["id","utente_id","payload_json","createdAt","updatedAt","isDeleted"];
+const H_SOC = ["id","utente_id","nome","tag_colore","valuta_default","createdAt","updatedAt","isDeleted"];
+const H_SOCIETA_TARIFFE = ["id","utente_id","societa_id","anno_esercizio","L1_importo","L2_importo","L3_importo","valuta","createdAt","updatedAt","isDeleted"];
+
+const H_PAZ = ["id","utente_id","societa_id","nome_cognome","address","note","geo_lat","geo_lng","geo_accuracy","geo_ts","createdAt","updatedAt","isDeleted"];
+const H_TER = ["id","utente_id","paziente_id","livello","valid_from","valid_to","weekdays_json","from_time","to_time","note","createdAt","updatedAt","isDeleted"];
+const H_SED = ["id","utente_id","paziente_id","terapia_id","tipo","status","from_date","from_time","to_date","to_time","date","livello","importo","importo_override","valuta","anno_esercizio","note","createdAt","updatedAt","isDeleted"];
 
 function ensureAllSheets_() {
   ensureHeaders_(SHEETS.utenti, H_UTENTI);
-  ensureHeaders_(SHEETS.impostazioni, H_IMPOST);
   ensureHeaders_(SHEETS.societa, H_SOC);
+  ensureHeaders_(SHEETS.societa_tariffe, H_SOCIETA_TARIFFE);
   ensureHeaders_(SHEETS.pazienti, H_PAZ);
   ensureHeaders_(SHEETS.terapie, H_TER);
   const shSed = ensureHeaders_(SHEETS.sedute, H_SED);
-  // Make sure sedute date/time columns are text to avoid unwanted reformatting
   try {
-    const colsText = ["from_date","to_date","from_time","to_time"];
+    const colsText = ["from_date","to_date","from_time","to_time","date"];
     colsText.forEach(k => {
       const idx = H_SED.indexOf(k);
       if (idx >= 0) shSed.getRange(2, idx+1, Math.max(1, shSed.getMaxRows()-1), 1).setNumberFormat("@STRING@");
@@ -174,53 +175,59 @@ function listUsers_() {
 
 function createUser_(nome, password) {
   ensureAllSheets_();
-  const sh = ss_().getSheetByName(SHEETS.utenti);
-  const { headers, rows } = readAll_(sh);
+  nome = String(nome||"").trim();
+  password = String(password||"");
+  if (!nome) throw new Error("Nome mancante");
+  if (!password) throw new Error("Password mancante");
+
+  const shU = ss_().getSheetByName(SHEETS.utenti);
+  const { headers, rows } = readAll_(shU);
   const idxNome = headers.indexOf("nome");
-  if (idxNome >= 0) {
-    const exists = rows.some(r => String(r[idxNome]||"").trim() === String(nome||"").trim());
-    if (exists) throw new Error("Utente già esistente");
+  const idxDel = headers.indexOf("isDeleted");
+
+  for (const r of rows) {
+    if (idxDel>=0 && String(r[idxDel]||"")==="1") continue;
+    if (String(r[idxNome]||"").trim().toLowerCase() === nome.toLowerCase()) throw new Error("Utente già esistente");
   }
+
   const id = uuid_();
+  const now = nowIso_();
   const year = String(new Date().getFullYear());
-  const ts = nowIso_();
-  writeRow_(sh, headers, {
-    id,
-    email: "",
-    nome: String(nome||"").trim(),
-    ruolo: "user",
-    active_year: year,
-    password_hash: userHash_(id, String(password||"")),
-    createdAt: ts,
-    updatedAt: ts,
-    isDeleted: "FALSE"
+  const row = headers.map(h => {
+    switch (h) {
+      case "id": return id;
+      case "nome": return nome;
+      case "active_year": return year;
+      case "password_hash": return hashPass_(password);
+      case "createdAt": return now;
+      case "updatedAt": return now;
+      case "isDeleted": return "0";
+      default: return "";
+    }
   });
-  // create impostazioni row
-  ensureImpostazioniRow_(id, year);
-  return { id, nome: String(nome||"").trim(), ruolo: "user", active_year: year };
+  shU.appendRow(row);
+  return { id, nome, active_year: year };
 }
 
 function login_(nome, password) {
   ensureAllSheets_();
-  const sh = ss_().getSheetByName(SHEETS.utenti);
-  const { headers, rows } = readAll_(sh);
+  nome = String(nome||"").trim();
+  password = String(password||"");
+  const shU = ss_().getSheetByName(SHEETS.utenti);
+  const { headers, rows } = readAll_(shU);
   const idxNome = headers.indexOf("nome");
-  const idxId = headers.indexOf("id");
   const idxHash = headers.indexOf("password_hash");
+  const idxId = headers.indexOf("id");
   const idxYear = headers.indexOf("active_year");
-  const idxRole = headers.indexOf("ruolo");
   const idxDel = headers.indexOf("isDeleted");
-  for (let i=0;i<rows.length;i++) {
-    const r = rows[i];
-    if (idxDel>=0 && String(r[idxDel]).toLowerCase()==="true") continue;
-    if (String(r[idxNome]||"").trim() !== String(nome||"").trim()) continue;
-    const uid = String(r[idxId]||"");
-    const stored = String(r[idxHash]||"");
-    const h = userHash_(uid, String(password||""));
-    if (stored !== h) throw new Error("Credenziali non valide");
-    return { id: uid, nome: String(r[idxNome]||""), ruolo: String(r[idxRole]||"user"), active_year: String(r[idxYear]||"") };
+
+  for (const r of rows) {
+    if (idxDel>=0 && String(r[idxDel]||"")==="1") continue;
+    if (String(r[idxNome]||"").trim().toLowerCase() !== nome.toLowerCase()) continue;
+    if (!verifyPass_(password, String(r[idxHash]||""))) throw new Error("Password errata");
+    return { id: String(r[idxId]||""), nome: String(r[idxNome]||""), active_year: String(r[idxYear]||"") };
   }
-  throw new Error("Credenziali non valide");
+  throw new Error("Utente non trovato");
 }
 
 function updatePassword_(nome, oldPassword, newPassword) {
@@ -246,124 +253,114 @@ function updatePassword_(nome, oldPassword, newPassword) {
 }
 
 // -------------------- Settings --------------------
-function ensureImpostazioniRow_(userId, activeYear) {
-  const sh = ensureHeaders_(SHEETS.impostazioni, H_IMPOST);
-  const { headers, rows } = readAll_(sh);
-  const idxUid = headers.indexOf("utente_id");
-  const idxId = headers.indexOf("id");
-  for (let i=0;i<rows.length;i++) {
-    if (String(rows[i][idxUid]||"") === String(userId||"")) {
-      return { id: String(rows[i][idxId]||""), utente_id: String(userId), active_year: String(rows[i][headers.indexOf("active_year")]||"") };
-    }
-  }
-  const id = uuid_();
-  const ts = nowIso_();
-  writeRow_(sh, headers, {
-    id,
-    utente_id: String(userId),
-    active_year: String(activeYear||String(new Date().getFullYear())),
-    payload_json: "{}",
-    createdAt: ts,
-    updatedAt: ts,
-    isDeleted: "FALSE"
-  });
-  return { id, utente_id: String(userId), active_year: String(activeYear||"") };
-}
+function ensureImpostazioniRow_(userId, activeYear) { return; }
 
 function getSettings_(userId) {
   ensureAllSheets_();
   const shU = ss_().getSheetByName(SHEETS.utenti);
-  const hu = shU.getRange(1,1,1,shU.getLastColumn()).getValues()[0];
-  const { rows: ru } = readAll_(shU);
-  const idxId = hu.indexOf("id");
-  const idxYear = hu.indexOf("active_year");
+  const { headers, rows } = readAll_(shU);
+  const idxId = headers.indexOf("id");
+  const idxYear = headers.indexOf("active_year");
   let activeYear = String(new Date().getFullYear());
-  for (const r of ru) if (String(r[idxId]||"")===String(userId||"")) { activeYear = String(r[idxYear]||activeYear); break; }
-
-  const sh = ss_().getSheetByName(SHEETS.impostazioni);
-  const { headers, rows } = readAll_(sh);
-  const idxUid = headers.indexOf("utente_id");
-  const idxPayload = headers.indexOf("payload_json");
-  const idxYear2 = headers.indexOf("active_year");
   for (const r of rows) {
-    if (String(r[idxUid]||"") !== String(userId||"")) continue;
-    const payload = parseJson_(r[idxPayload], {});
-    return { active_year: String(r[idxYear2]||activeYear), payload };
+    if (String(r[idxId]||"") === String(userId||"")) { activeYear = String(r[idxYear]||activeYear); break; }
   }
-  ensureImpostazioniRow_(userId, activeYear);
-  return { active_year: activeYear, payload: {} };
+  return { active_year: activeYear };
 }
 
 function saveSettings_(userId, payloadStr) {
   ensureAllSheets_();
   const payload = parseJson_(payloadStr, {});
-  const desiredYear = payload && payload.active_year ? String(payload.active_year) : "";
-  const sh = ss_().getSheetByName(SHEETS.impostazioni);
-  const lastRow = sh.getLastRow();
-  const headers = sh.getRange(1,1,1,sh.getLastColumn()).getValues()[0];
-  const idxUid = headers.indexOf("utente_id");
-  let foundRow = -1;
-  for (let r=2;r<=lastRow;r++) {
-    const uid = String(sh.getRange(r, idxUid+1).getValue()||"");
-    if (uid === String(userId||"")) { foundRow = r; break; }
-  }
-  if (foundRow < 0) {
-    ensureImpostazioniRow_(userId, desiredYear || String(new Date().getFullYear()));
-    return getSettings_(userId);
-  }
-  setCell_(sh, foundRow, headers, "payload_json", JSON.stringify(payload || {}));
-  if (desiredYear) setCell_(sh, foundRow, headers, "active_year", desiredYear);
-  setCell_(sh, foundRow, headers, "updatedAt", nowIso_());
+  const nextYear = payload && payload.active_year ? String(payload.active_year) : "";
+  if (!nextYear) return getSettings_(userId);
 
-  if (desiredYear) {
-    // mirror to utenti.active_year
-    const shu = ss_().getSheetByName(SHEETS.utenti);
-    const hu = shu.getRange(1,1,1,shu.getLastColumn()).getValues()[0];
-    const idxId = hu.indexOf("id");
-    for (let r=2;r<=shu.getLastRow();r++) {
-      const uid = String(shu.getRange(r, idxId+1).getValue()||"");
-      if (uid===String(userId||"")) {
-        setCell_(shu, r, hu, "active_year", desiredYear);
-        setCell_(shu, r, hu, "updatedAt", nowIso_());
-        break;
-      }
-    }
+  const shU = ss_().getSheetByName(SHEETS.utenti);
+  const { headers, rows } = readAll_(shU);
+  const idxId = headers.indexOf("id");
+  const idxYear = headers.indexOf("active_year");
+  const idxDel = headers.indexOf("isDeleted");
+  const idxUpd = headers.indexOf("updatedAt");
+  const now = nowIso_();
+
+  for (let i=0;i<rows.length;i++){
+    const r=rows[i];
+    if (idxDel>=0 && String(r[idxDel]||"")==="1") continue;
+    if (String(r[idxId]||"")!==String(userId||"")) continue;
+    shU.getRange(i+2, idxYear+1).setValue(nextYear);
+    if (idxUpd>=0) shU.getRange(i+2, idxUpd+1).setValue(now);
+    return { active_year: nextYear };
   }
-  return getSettings_(userId);
+  throw new Error("User not found");
 }
 
 // -------------------- Società --------------------
 function addSocieta_(userId, nome, tag, l1, l2, l3, valuta) {
   ensureAllSheets_();
+  userId = String(userId||"");
+  nome = String(nome||"").trim();
+  if (!userId) throw new Error("userId mancante");
+  if (!nome) throw new Error("Nome società mancante");
+
+  const now = nowIso_();
   const sh = ss_().getSheetByName(SHEETS.societa);
-  const headers = sh.getRange(1,1,1,sh.getLastColumn()).getValues()[0];
-  const ts = nowIso_();
+  const { headers, rows } = readAll_(sh);
+  const idxUid = headers.indexOf("utente_id");
+  const idxNome = headers.indexOf("nome");
+  const idxDel = headers.indexOf("isDeleted");
+  for (const r of rows) {
+    if (idxDel>=0 && String(r[idxDel]||"")==="1") continue;
+    if (String(r[idxUid]||"")===userId && String(r[idxNome]||"").trim().toLowerCase()===nome.toLowerCase()) throw new Error("Società già esistente");
+  }
+
   const id = uuid_();
-  writeRow_(sh, headers, {
-    id,
-    utente_id: String(userId),
-    nome: String(nome||"").trim(),
-    tag_colore: String(tag||"#2f80ed").trim(),
-    tariffa_a: norm_(l1),
-    tariffa_b: norm_(l2),
-    tariffa_c: norm_(l3),
-    valuta: String(valuta||"EUR").trim() || "EUR",
-    createdAt: ts,
-    updatedAt: ts,
-    isDeleted: "FALSE"
+  const row = headers.map(h => {
+    switch(h){
+      case "id": return id;
+      case "utente_id": return userId;
+      case "nome": return nome;
+      case "tag_colore": return String(tag||"").trim() || "0";
+      case "valuta_default": return String(valuta||"").trim() || "EUR";
+      case "createdAt": return now;
+      case "updatedAt": return now;
+      case "isDeleted": return "0";
+      default: return "";
+    }
   });
-  return { id };
+  sh.appendRow(row);
+
+  const year = String(getSettings_(userId).active_year || String(new Date().getFullYear()));
+  upsertSocietaTariffe_(userId, id, year, l1, l2, l3, valuta);
+
+  return { id, utente_id: userId, nome, tag_colore: String(tag||"").trim() || "0", valuta_default: String(valuta||"").trim() || "EUR" };
 }
 
 function listSocieta_(userId) {
   ensureAllSheets_();
+  userId = String(userId||"");
+  const year = String(getSettings_(userId).active_year || String(new Date().getFullYear()));
   const sh = ss_().getSheetByName(SHEETS.societa);
   const { headers, rows } = readAll_(sh);
   const idxUid = headers.indexOf("utente_id");
+  const idxId = headers.indexOf("id");
   const idxDel = headers.indexOf("isDeleted");
-  return rows
-    .filter(r => String(r[idxUid]||"")===String(userId||"") && !(idxDel>=0 && String(r[idxDel]).toLowerCase()==="true"))
-    .map(r => rowToObj_(headers, r));
+
+  const tariffsBySoc = buildTariffeMap_(userId, year);
+
+  const out = [];
+  for (const r of rows) {
+    if (idxDel>=0 && String(r[idxDel]||"")==="1") continue;
+    if (String(r[idxUid]||"")!==userId) continue;
+    const id = String(r[idxId]||"");
+    const obj = rowToObj_(headers, r);
+    const t = tariffsBySoc[id] || {};
+    obj.l1 = t.L1_importo != null ? String(t.L1_importo) : "";
+    obj.l2 = t.L2_importo != null ? String(t.L2_importo) : "";
+    obj.l3 = t.L3_importo != null ? String(t.L3_importo) : "";
+    obj.anno_esercizio = year;
+    if (!obj.valuta) obj.valuta = t.valuta || obj.valuta_default || "EUR";
+    out.push(obj);
+  }
+  return out;
 }
 
 function deleteSocieta_(userId, id, nome) {
@@ -407,75 +404,68 @@ function levelToTariffaTipo_(lvl) {
 
 function createPatient_(userId, payloadStr) {
   ensureAllSheets_();
+  userId = String(userId||"");
   const payload = parseJson_(payloadStr, {});
+  const now = nowIso_();
   const sh = ss_().getSheetByName(SHEETS.pazienti);
-  const headers = sh.getRange(1,1,1,sh.getLastColumn()).getValues()[0];
-  const ts = nowIso_();
+  const { headers } = readAll_(sh);
   const id = uuid_();
-  const start = toIsoDate_(payload.data_inizio);
-  const end = toIsoDate_(payload.data_fine);
-  const giorni = String(payload.giorni_settimana || payload.giorni_settimana_json || payload.giorni_settimana_str || "").trim();
-
-  writeRow_(sh, headers, {
-    id,
-    utente_id: String(userId),
-    societa_id: String(payload.societa_id||""),
-    nome_cognome: String(payload.nome_cognome||payload.nome||"").trim(),
-    indirizzo_casa: String(payload.address||payload.indirizzo_casa||"").trim(),
-    tariffa_tipo: levelToTariffaTipo_(payload.livello),
-    data_inizio: start,
-    data_fine: end,
-    giorni_settimana_json: giorni,
-    geo_lat: norm_(payload.geo_lat),
-    geo_lng: norm_(payload.geo_lng),
-    geo_accuracy: norm_(payload.geo_accuracy),
-    geo_ts: norm_(payload.geo_ts),
-    createdAt: ts,
-    updatedAt: ts,
-    isDeleted: "FALSE"
+  const row = headers.map(h => {
+    switch(h){
+      case "id": return id;
+      case "utente_id": return userId;
+      case "societa_id": return String(payload.societa_id||"");
+      case "nome_cognome": return String(payload.nome_cognome||"").trim();
+      case "address": return String(payload.address||"").trim();
+      case "note": return String(payload.note||"").trim();
+      case "geo_lat": return payload.geo_lat || "";
+      case "geo_lng": return payload.geo_lng || "";
+      case "geo_accuracy": return payload.geo_accuracy || "";
+      case "geo_ts": return payload.geo_ts || "";
+      case "createdAt": return now;
+      case "updatedAt": return now;
+      case "isDeleted": return "0";
+      default: return "";
+    }
   });
-
-  // Sync: terapie + sedute
-  syncTerapieAndSedute_(userId, id, start, end, giorni, start);
-
-  return { id };
+  sh.appendRow(row);
+  return { id, utente_id: userId, societa_id: String(payload.societa_id||""), nome_cognome: String(payload.nome_cognome||""), address: String(payload.address||"") };
 }
 
 function updatePatient_(userId, id, payloadStr) {
   ensureAllSheets_();
+  userId = String(userId||"");
+  id = String(id||"");
   const payload = parseJson_(payloadStr, {});
   const sh = ss_().getSheetByName(SHEETS.pazienti);
-  const headers = sh.getRange(1,1,1,sh.getLastColumn()).getValues()[0];
-  const idxUid = headers.indexOf("utente_id");
+  const { headers, rows } = readAll_(sh);
   const idxId = headers.indexOf("id");
-  const lastRow = sh.getLastRow();
-  let rowIndex = -1;
-  for (let r=2;r<=lastRow;r++) {
-    const row = sh.getRange(r,1,1,headers.length).getValues()[0];
-    if (String(row[idxUid]||"")===String(userId||"") && String(row[idxId]||"")===String(id||"")) { rowIndex = r; break; }
+  const idxUid = headers.indexOf("utente_id");
+  const idxDel = headers.indexOf("isDeleted");
+  const now = nowIso_();
+  for (let i=0;i<rows.length;i++){
+    const r=rows[i];
+    if (idxDel>=0 && String(r[idxDel]||"")==="1") continue;
+    if (String(r[idxUid]||"")!==userId) continue;
+    if (String(r[idxId]||"")!==id) continue;
+    const up = {
+      societa_id: String(payload.societa_id||""),
+      nome_cognome: String(payload.nome_cognome||"").trim(),
+      address: String(payload.address||"").trim(),
+      note: String(payload.note||"").trim(),
+      geo_lat: payload.geo_lat || "",
+      geo_lng: payload.geo_lng || "",
+      geo_accuracy: payload.geo_accuracy || "",
+      geo_ts: payload.geo_ts || "",
+      updatedAt: now
+    };
+    Object.entries(up).forEach(([k,v])=>{
+      const c=headers.indexOf(k);
+      if (c>=0) sh.getRange(i+2,c+1).setValue(v);
+    });
+    return { id, utente_id:userId, societa_id:up.societa_id, nome_cognome:up.nome_cognome, address:up.address };
   }
-  if (rowIndex < 0) throw new Error("Paziente non trovato");
-
-  const start = toIsoDate_(payload.data_inizio);
-  const end = toIsoDate_(payload.data_fine);
-  const giorni = String(payload.giorni_settimana || "").trim();
-
-  setCell_(sh, rowIndex, headers, "societa_id", String(payload.societa_id||""));
-  setCell_(sh, rowIndex, headers, "nome_cognome", String(payload.nome_cognome||"").trim());
-  setCell_(sh, rowIndex, headers, "indirizzo_casa", String(payload.address||payload.indirizzo_casa||"").trim());
-  setCell_(sh, rowIndex, headers, "tariffa_tipo", levelToTariffaTipo_(payload.livello));
-  setCell_(sh, rowIndex, headers, "data_inizio", start);
-  setCell_(sh, rowIndex, headers, "data_fine", end);
-  setCell_(sh, rowIndex, headers, "giorni_settimana_json", giorni);
-  setCell_(sh, rowIndex, headers, "geo_lat", norm_(payload.geo_lat));
-  setCell_(sh, rowIndex, headers, "geo_lng", norm_(payload.geo_lng));
-  setCell_(sh, rowIndex, headers, "geo_accuracy", norm_(payload.geo_accuracy));
-  setCell_(sh, rowIndex, headers, "geo_ts", norm_(payload.geo_ts));
-  setCell_(sh, rowIndex, headers, "updatedAt", nowIso_());
-
-  const eff = toIsoDate_(payload.therapy_effective_from) || start || toIsoDate_(new Date());
-  syncTerapieAndSedute_(userId, String(id||""), start, end, giorni, eff);
-  return { id };
+  throw new Error("Paziente non trovato");
 }
 
 function deletePatient_(userId, id) {
@@ -631,7 +621,7 @@ function deleteSessionById_(userId, id) {
 function wipeAll_(userId) {
   // Safety: only wipes the current user's data (not other users)
   ensureAllSheets_();
-  const targets = [SHEETS.societa, SHEETS.pazienti, SHEETS.terapie, SHEETS.sedute, SHEETS.impostazioni];
+  const targets = [SHEETS.societa, SHEETS.societa_tariffe, SHEETS.pazienti, SHEETS.terapie, SHEETS.sedute];
   const ss = ss_();
   targets.forEach(name => {
     const sh = ss.getSheetByName(name);
@@ -806,6 +796,158 @@ function syncTerapieAndSedute_(userId, pazienteId, startIso, endIso, giorniJson,
 }
 
 // -------------------- Router --------------------
+
+/* -------------------- Società Tariffe (per anno esercizio) -------------------- */
+function buildTariffeMap_(userId, anno) {
+  const sh = ss_().getSheetByName(SHEETS.societa_tariffe);
+  const { headers, rows } = readAll_(sh);
+  const idxUid = headers.indexOf("utente_id");
+  const idxSoc = headers.indexOf("societa_id");
+  const idxAnno = headers.indexOf("anno_esercizio");
+  const idxDel = headers.indexOf("isDeleted");
+  const map = {};
+  for (const r of rows) {
+    if (idxDel>=0 && String(r[idxDel]||"")==="1") continue;
+    if (String(r[idxUid]||"")!==String(userId||"")) continue;
+    if (String(r[idxAnno]||"")!==String(anno||"")) continue;
+    const sid = String(r[idxSoc]||"");
+    if (!sid) continue;
+    map[sid] = rowToObj_(headers, r);
+  }
+  return map;
+}
+
+function upsertSocietaTariffe_(userId, societaId, anno, l1, l2, l3, valuta) {
+  const sh = ss_().getSheetByName(SHEETS.societa_tariffe);
+  const { headers, rows } = readAll_(sh);
+  const idxUid = headers.indexOf("utente_id");
+  const idxSoc = headers.indexOf("societa_id");
+  const idxAnno = headers.indexOf("anno_esercizio");
+  const idxDel = headers.indexOf("isDeleted");
+  const idxUpd = headers.indexOf("updatedAt");
+  const now = nowIso_();
+  const sid = String(societaId||"");
+  const y = String(anno||"");
+  for (let i=0;i<rows.length;i++){
+    const r=rows[i];
+    if (idxDel>=0 && String(r[idxDel]||"")==="1") continue;
+    if (String(r[idxUid]||"")!==String(userId||"")) continue;
+    if (String(r[idxSoc]||"")!==sid) continue;
+    if (String(r[idxAnno]||"")!==y) continue;
+    const up = {"L1_importo":String(l1||""),"L2_importo":String(l2||""),"L3_importo":String(l3||""),"valuta":String(valuta||"EUR")};
+    Object.entries(up).forEach(([k,v])=>{
+      const c=headers.indexOf(k); if (c>=0) sh.getRange(i+2,c+1).setValue(v);
+    });
+    if (idxUpd>=0) sh.getRange(i+2, idxUpd+1).setValue(now);
+    return;
+  }
+  const id = uuid_();
+  const row = headers.map(h=>{
+    switch(h){
+      case "id": return id;
+      case "utente_id": return String(userId||"");
+      case "societa_id": return sid;
+      case "anno_esercizio": return y;
+      case "L1_importo": return String(l1||"");
+      case "L2_importo": return String(l2||"");
+      case "L3_importo": return String(l3||"");
+      case "valuta": return String(valuta||"EUR");
+      case "createdAt": return now;
+      case "updatedAt": return now;
+      case "isDeleted": return "0";
+      default: return "";
+    }
+  });
+  sh.appendRow(row);
+}
+
+/* -------------------- Terapie CRUD -------------------- */
+function addTherapy_(userId, payloadStr) {
+  ensureAllSheets_();
+  userId = String(userId||"");
+  const payload = parseJson_(payloadStr, {});
+  const now = nowIso_();
+  const sh = ss_().getSheetByName(SHEETS.terapie);
+  const { headers } = readAll_(sh);
+  const id = uuid_();
+  const row = headers.map(h=>{
+    switch(h){
+      case "id": return id;
+      case "utente_id": return userId;
+      case "paziente_id": return String(payload.paziente_id||"");
+      case "livello": return String(payload.livello||"L1");
+      case "valid_from": return String(payload.valid_from||"");
+      case "valid_to": return String(payload.valid_to||"");
+      case "weekdays_json": return String(payload.weekdays_json||"[]");
+      case "from_time": return String(payload.from_time||"");
+      case "to_time": return String(payload.to_time||"");
+      case "note": return String(payload.note||"");
+      case "createdAt": return now;
+      case "updatedAt": return now;
+      case "isDeleted": return "0";
+      default: return "";
+    }
+  });
+  sh.appendRow(row);
+  return rowToObj_(headers, row);
+}
+
+function updateTherapy_(userId, id, payloadStr) {
+  ensureAllSheets_();
+  userId = String(userId||"");
+  id = String(id||"");
+  const payload = parseJson_(payloadStr, {});
+  const sh = ss_().getSheetByName(SHEETS.terapie);
+  const { headers, rows } = readAll_(sh);
+  const idxId = headers.indexOf("id");
+  const idxUid = headers.indexOf("utente_id");
+  const idxDel = headers.indexOf("isDeleted");
+  const now = nowIso_();
+  for (let i=0;i<rows.length;i++){
+    const r=rows[i];
+    if (idxDel>=0 && String(r[idxDel]||"")==="1") continue;
+    if (String(r[idxUid]||"")!==userId) continue;
+    if (String(r[idxId]||"")!==id) continue;
+    const up = {
+      paziente_id: String(payload.paziente_id||r[headers.indexOf("paziente_id")]||""),
+      livello: String(payload.livello||r[headers.indexOf("livello")]||"L1"),
+      valid_from: String(payload.valid_from||""),
+      valid_to: String(payload.valid_to||""),
+      weekdays_json: String(payload.weekdays_json||"[]"),
+      from_time: String(payload.from_time||""),
+      to_time: String(payload.to_time||""),
+      note: String(payload.note||""),
+      updatedAt: now
+    };
+    Object.entries(up).forEach(([k,v])=>{ const c=headers.indexOf(k); if (c>=0) sh.getRange(i+2,c+1).setValue(v); });
+    return { id: id };
+  }
+  throw new Error("Terapia non trovata");
+}
+
+function deleteTherapy_(userId, id) {
+  ensureAllSheets_();
+  userId = String(userId||"");
+  id = String(id||"");
+  const sh = ss_().getSheetByName(SHEETS.terapie);
+  const { headers, rows } = readAll_(sh);
+  const idxId = headers.indexOf("id");
+  const idxUid = headers.indexOf("utente_id");
+  const idxDel = headers.indexOf("isDeleted");
+  const idxUpd = headers.indexOf("updatedAt");
+  const now = nowIso_();
+  for (let i=0;i<rows.length;i++){
+    const r=rows[i];
+    if (String(r[idxUid]||"")!==userId) continue;
+    if (String(r[idxId]||"")!==id) continue;
+    if (idxDel>=0) sh.getRange(i+2, idxDel+1).setValue("1");
+    if (idxUpd>=0) sh.getRange(i+2, idxUpd+1).setValue(now);
+    return { id, deleted:true };
+  }
+  throw new Error("Terapia non trovata");
+}
+
+
 function doGet(e) {
   try {
     const cb = sanitizeCallback_(e && e.parameter ? e.parameter.callback : "");
@@ -817,7 +959,7 @@ function doGet(e) {
 
     switch (action) {
       case "ping":
-        return out_({ ok: true, ts: nowIso_(), version: "2.011" }, cb);
+        return out_({ ok: true, ts: nowIso_(), version: "2.000" }, cb);
 
       // Auth
       case "listUsers":
@@ -862,7 +1004,16 @@ function doGet(e) {
       // Terapie / Move
       case "listTherapies":
         return out_({ ok: true, therapies: listTherapies_(e.parameter.userId, e.parameter.pazienteId), terapie: listTherapies_(e.parameter.userId, e.parameter.pazienteId) }, cb);
-      case "listMoves":
+      
+case "addTherapy":
+  return out_({ ok: true, therapy: addTherapy_(e.parameter.userId, e.parameter.payload) }, cb);
+case "updateTherapy":
+  return out_({ ok: true, therapy: updateTherapy_(e.parameter.userId, e.parameter.id, e.parameter.payload) }, cb);
+case "deleteTherapy":
+  return out_({ ok: true, therapy: deleteTherapy_(e.parameter.userId, e.parameter.id) }, cb);
+
+case "listMoves":
+
         return out_({ ok: true, moves: listMoves_(e.parameter.userId, e.parameter.pazienteId), spostamenti: listMoves_(e.parameter.userId, e.parameter.pazienteId) }, cb);
       case "moveSession": {
         // Supports both legacy JSON payload and flat params (paziente_id/from_date/from_time/to_date/to_time/note...)

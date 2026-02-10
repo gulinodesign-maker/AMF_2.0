@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Montalto PMS</title>
-  <link rel="stylesheet" href="./styles.css?v=2.012" />
+  <link rel="stylesheet" href="./styles.css?v=2.000" />
   <link rel="manifest" href="./manifest.json" />
   <meta name="theme-color" content="#2a74b8" />
   <link rel="apple-touch-icon" href="./assets/apple-touch-icon.png" />
@@ -83,7 +83,7 @@
       </section>
         </div>
         <div class="home-footer" aria-label="Build">
-          <div class="build" id="buildLabel">2.012</div>
+          <div class="build" id="buildLabel">2.000</div>
         </div>
       </div>
     </section>
@@ -244,28 +244,17 @@
               <svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"></path></svg>
             </button>
           </div>
+<div class="therapy-section" id="therapySection" hidden>
+  <div class="therapy-head">
+    <div class="therapy-title">Terapie</div>
+    <button class="mini-icon" id="btnAddTherapy" type="button" aria-label="Aggiungi terapia">
+      <svg viewBox="0 0 24 24"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg>
+    </button>
+  </div>
+  <div id="therapyList" class="therapy-list"></div>
+</div>
 
-          <div class="row-level" aria-label="Livello">
-            <button class="circle-btn" id="btnL1" type="button">L1</button>
-            <button class="circle-btn" id="btnL2" type="button">L2</button>
-            <button class="circle-btn" id="btnL3" type="button">L3</button>
-          </div>
-
-          <div class="row2">
-            <input class="field" id="patStart" type="date" placeholder="Data inizio" />
-            <input class="field" id="patEnd" type="date" placeholder="Data fine" />
-          </div>
-
-          <div class="row-days" aria-label="Giorni settimana">
-            <button class="day-btn" data-day="LU" type="button"><span class="day">LU</span><span class="time" id="t_LU">—</span></button>
-            <button class="day-btn" data-day="MA" type="button"><span class="day">MA</span><span class="time" id="t_MA">—</span></button>
-            <button class="day-btn" data-day="ME" type="button"><span class="day">ME</span><span class="time" id="t_ME">—</span></button>
-            <button class="day-btn" data-day="GI" type="button"><span class="day">GI</span><span class="time" id="t_GI">—</span></button>
-            <button class="day-btn" data-day="VE" type="button"><span class="day">VE</span><span class="time" id="t_VE">—</span></button>
-            <button class="day-btn" data-day="SA" type="button"><span class="day">SA</span><span class="time" id="t_SA">—</span></button>
-          </div>
-
-          <button class="pill-btn pill-blue" id="btnPatSave" type="submit">salva</button>
+<button class="pill-btn pill-blue" id="btnPatSave" type="submit">salva</button>
         </form>
       </div>
     </section>
@@ -481,7 +470,28 @@
       </div>
     </div>
 
-  <script src="./config.js?v=2.012"></script>
-  <script src="./app.js?v=2.012"></script>
+  <script src="./config.js?v=2.000"></script>
+  <script src="./app.js?v=2.000"></script>
+<!-- MODAL: Modifica slot calendario (long press) -->
+<div class="modal" id="modalEditSlot" role="dialog" aria-modal="true" aria-label="Modifica slot" hidden>
+  <div class="modal-card">
+    <div class="modal-title">Modifica slot</div>
+    <div class="modal-body">
+      <div class="row2">
+        <select class="field" id="slotMonth"></select>
+        <select class="field" id="slotDay"></select>
+      </div>
+      <div class="row2">
+        <input class="field" id="slotTime" type="time" step="1800" />
+        <input class="field" id="slotTime2" type="time" step="1800" />
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="pill-btn" id="btnSlotCancel" type="button">annulla</button>
+      <button class="pill-btn pill-blue" id="btnSlotSave" type="button">salva</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
