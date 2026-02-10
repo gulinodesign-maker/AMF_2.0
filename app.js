@@ -1,7 +1,7 @@
-/* AMF_1.098 */
+/* AMF_1.099 */
 (() => {
-    const BUILD = "AMF_1.098";
-    const DISPLAY = "1.098";
+    const BUILD = "AMF_1.099";
+    const DISPLAY = "1.099";
 
   // --- Helpers
   const $ = (sel) => document.querySelector(sel);
@@ -168,7 +168,16 @@
     return safeJsonParse(localStorage.getItem("AMF_SESSION") || "", null);
   }
   function setSession(user) {
+    const prev = getSession();
+    const prevId = (prev && prev.id) ? String(prev.id) : null;
+    const nextId = (user && user.id) ? String(user.id) : null;
+
     localStorage.setItem("AMF_SESSION", JSON.stringify(user));
+
+    if (prevId !== nextId) {
+      try { resetCoreDataCaches_("session-change"); } catch (_) {}
+    }
+
     try {
       const qm = (typeof queueMicrotask === "function") ? queueMicrotask : ((fn) => setTimeout(fn, 0));
       qm(() => { try { warmupCoreData(); } catch (_) {} });
@@ -178,6 +187,7 @@
   }
   function clearSession() {
     localStorage.removeItem("AMF_SESSION");
+    try { resetCoreDataCaches_("logout"); } catch (_) {}
   }
 
   // Migrazione build: se cambia build e config.js ha un URL valido, aggiorna l"API_URL locale
@@ -2615,7 +2625,7 @@ function fillCalendarFromPatients(patients) {
 async function ensurePatientsForCalendar() {
   const user = getSession();
   if (!user || !user.id) return [];
-  if (!patientsLoaded) {
+  if (!patientsLoaded || patientsLoadedForUserId !== user.id) {
     try { await loadPatients({ render: false }); } catch { /* ignore */ }
   }
   return Array.isArray(patientsCache) ? patientsCache : [];
@@ -3551,6 +3561,7 @@ function formatItMonth(dateObj) {
 
   let patientsCache = null;
   let patientsLoaded = false;
+  let patientsLoadedForUserId = null;
   let patientsSortMode = "date"; // date|az|soc|today
   let currentPatient = null;
   let patientEditEnabled = true; // per create
@@ -3558,18 +3569,35 @@ function formatItMonth(dateObj) {
 
   // --- Warmup dati core (per calendario istantaneo)
   let warmupPromise = null;
+  let warmupUserId = null;
+
+  function resetCoreDataCaches_(reason) {
+    try {
+      patientsCache = null;
+      patientsLoaded = false;
+      patientsLoadedForUserId = null;
+      warmupPromise = null;
+      warmupUserId = null;
+    } catch (_) {}
+  }
+
   function warmupCoreData() {
     const user = getSession();
     if (!user || !user.id) return Promise.resolve();
-    if (warmupPromise) return warmupPromise;
+
+    // Warmup per utente: se cambia utente, invalida il warmup precedente
+    if (warmupPromise && warmupUserId === user.id) return warmupPromise;
+    warmupUserId = user.id;
+
     warmupPromise = (async () => {
       try {
+        const patientsOk = (patientsLoaded && patientsLoadedForUserId === user.id);
         await Promise.all([
           loadSocietaCache().catch(() => []),
-          (patientsLoaded ? Promise.resolve() : loadPatients({ render: false }).catch(() => {}))
+          (patientsOk ? Promise.resolve() : loadPatients({ render: false }).catch(() => {}))
         ]);
       } finally {
-        // lascia warmupPromise per riuso (evita richieste duplicate)
+        // lascia warmupPromise per riuso (evita richieste duplicate) SOLO per lo stesso utente
       }
     })();
     return warmupPromise;
@@ -3705,6 +3733,7 @@ function formatItMonth(dateObj) {
       const data = await apiCached("listPatients", { userId: user.id }, 8000);
       patientsCache = Array.isArray(data.pazienti) ? data.pazienti : [];
       patientsLoaded = true;
+      patientsLoadedForUserId = user.id || null;
       if (render) renderPatients();
     } catch (err) {
       if (apiHintIfUnknownAction(err)) return;
@@ -5194,7 +5223,7 @@ async function renderSocietaDeleteList() {
   // PWA (iOS): registra Service Worker
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {
-      navigator.serviceWorker.register("./service-worker.js?v=1.098").catch(() => {});
+      navigator.serviceWorker.register("./service-worker.js?v=1.099").catch(() => {});
     });
   }
 })();
