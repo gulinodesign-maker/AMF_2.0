@@ -1,7 +1,7 @@
-/* AMF_1.099 */
+/* AMF_1.100 */
 (() => {
-    const BUILD = "AMF_1.099";
-    const DISPLAY = "1.099";
+    const BUILD = "AMF_1.100";
+    const DISPLAY = "1.100";
 
   // --- Helpers
   const $ = (sel) => document.querySelector(sel);
@@ -3671,6 +3671,46 @@ function formatItMonth(dateObj) {
     return `fino al ${fmtItDateLong(e)}`;
   }
 
+
+  // Calcola l'intervallo complessivo delle terapie di un paziente (min start, max end)
+  // Usato per: pulsante/ordinamento scadenza e periodo visualizzato nelle card.
+  function getPatientTherapySpan_(p) {
+    const consider = (sVal, eVal, acc) => {
+      const s = dateOnlyLocal(sVal);
+      const e = dateOnlyLocal(eVal);
+      if (s && (!acc.minStart || s.getTime() < acc.minStart.getTime())) acc.minStart = s;
+      if (e && (!acc.maxEnd || e.getTime() > acc.maxEnd.getTime())) acc.maxEnd = e;
+    };
+
+    const acc = { minStart: null, maxEnd: null };
+
+    // 1) Terapie (preferito)
+    let therapies = [];
+    try { therapies = getPatientTherapiesForStats_(p) || []; } catch (_) { therapies = []; }
+
+    if (Array.isArray(therapies) && therapies.length) {
+      for (const t of therapies) {
+        consider(t?.data_inizio ?? t?.da ?? t?.start ?? "", t?.data_fine ?? t?.a ?? t?.end ?? "", acc);
+      }
+    }
+
+    // 2) Fallback su campi legacy del paziente (se non ci sono terapie parseabili)
+    if (!acc.minStart && !acc.maxEnd) {
+      consider(p?.data_inizio ?? p?.start ?? "", p?.data_fine ?? p?.end ?? "", acc);
+    } else {
+      // se manca uno dei due estremi, prova a completare con i campi legacy
+      if (!acc.minStart) consider(p?.data_inizio ?? p?.start ?? "", "", acc);
+      if (!acc.maxEnd) consider("", p?.data_fine ?? p?.end ?? "", acc);
+    }
+
+    return {
+      start: acc.minStart,
+      end: acc.maxEnd,
+      startTs: acc.minStart ? acc.minStart.getTime() : Infinity,
+      endTs: acc.maxEnd ? acc.maxEnd.getTime() : Infinity
+    };
+  }
+
   function getTodayDayKey() {
     // JS: 0=DOM,1=LUN,...6=SAB. App calendar uses 1..6 (LU..SA)
     const d = new Date();
@@ -3803,10 +3843,17 @@ function formatItMonth(dateObj) {
     return String(ka.full||"").localeCompare(String(kb.full||""), "it", { sensitivity: "base" });
   });
 } else if (patientsSortMode === "date") {
-  const endTs = (p) => {
-    const d = dateOnlyLocal(p?.data_fine || p?.end || "");
-    return d ? d.getTime() : Infinity;
+  const spanOf = (p) => {
+    try {
+      if (p && p.___amfSpan && typeof p.___amfSpan === "object") return p.___amfSpan;
+      const sp = getPatientTherapySpan_(p);
+      if (p && typeof p === "object") p.___amfSpan = sp;
+      return sp;
+    } catch (_) {
+      return { start: null, end: null, startTs: Infinity, endTs: Infinity };
+    }
   };
+  const endTs = (p) => spanOf(p).endTs;
   const nameKey = (p) => {
     const full = String(p?.nome_cognome || p?.nome || "").trim();
     if (!full) return { cognome: "", nome: "", full: "" };
@@ -3862,8 +3909,9 @@ function formatItMonth(dateObj) {
 
       const name = patientDisplayName(p) || "—";
       const soc = getSocNameById(p.societa_id || "") || "—";
-      const period = fmtTherapyPeriod(p.data_inizio || "", p.data_fine || "");
-      const endDateObj = (patientsSortMode === "date") ? dateOnlyLocal(p.data_fine || p.end || "") : null;
+      const __span = getPatientTherapySpan_(p);
+      const period = fmtTherapyPeriod(__span.start || "", __span.end || "");
+      const endDateObj = (patientsSortMode === "date") ? (__span.end || null) : null;
       const lastTherapyDay = endDateObj ? fmtItDateLongCap(endDateObj) : "";
 
       // Background color from società tag (20% opacity)
@@ -5223,7 +5271,7 @@ async function renderSocietaDeleteList() {
   // PWA (iOS): registra Service Worker
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {
-      navigator.serviceWorker.register("./service-worker.js?v=1.099").catch(() => {});
+      navigator.serviceWorker.register("./service-worker.js?v=1.100").catch(() => {});
     });
   }
 })();
