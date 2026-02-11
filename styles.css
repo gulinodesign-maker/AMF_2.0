@@ -1,4 +1,4 @@
-/* AMF_1.105 */
+/* AMF_1.107 */
 /* Montalto PMS - PWA iOS / GitHub Pages */
 :root{
   --text: #1b1f23;
@@ -1035,6 +1035,13 @@ select.field{ appearance: none; }
   border: 1px solid rgba(0,0,0,.08);
   background: rgba(0,0,0,.08);
   padding: 14px;
+}
+
+.therapy-divider{
+  height:1px;
+  background:#000;
+  margin: 10px 10px;
+  border-radius: 0;
 }
 
 .therapy-head{

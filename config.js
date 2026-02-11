@@ -1,4 +1,4 @@
-/* AMF_1.105 */
+/* AMF_1.107 */
 /**
  * URL della Web App Google Apps Script (deploy /exec).
  * Puoi comunque cambiarlo dall'app (salvato in locale).

@@ -1,7 +1,7 @@
-/* AMF_1.105 */
+/* AMF_1.107 */
 (() => {
-    const BUILD = "AMF_1.105";
-    const DISPLAY = "1.105";
+    const BUILD = "AMF_1.107";
+    const DISPLAY = "1.107";
 
   // --- Helpers
   const $ = (sel) => document.querySelector(sel);
@@ -2878,7 +2878,6 @@ async function ensurePatientsForCalendar() {
             if (currentView === "pazienti") renderPatients();
             if (currentView === "stats") await renderStatsTable_();
           } catch (_) {}
-
         } catch (err) {
           if (apiHintIfUnknownAction(err)) return;
           toast(String(err && err.message ? err.message : "Errore cancellazione"));
@@ -3715,22 +3714,10 @@ function formatItMonth(dateObj) {
       if (!acc.minStart) consider(p?.data_inizio ?? p?.start ?? "", "", acc);
       if (!acc.maxEnd) consider("", p?.data_fine ?? p?.end ?? "", acc);
     }
-    // 3) Considera eventuali spostamenti (sheet "sedute"): estende la scadenza se una seduta è stata spostata avanti nel tempo
-    const movedMax = (p && (p.sedute_max_data || p.sedute_max || p.max_seduta_data || p.maxSedutaData || p.seduta_max_data)) || "";
-    if (movedMax) {
-      // aggiorna solo l'estremo finale (passa start vuoto)
-      consider("", movedMax, acc);
-    }
-
-    // 4) Scadenza reale: ultima data effettiva letta dal calendario (considera MOVE + CANCEL)
-    const lastYmd = (p && (p.sedute_last_data || p.sedute_last || p.sedute_last_date || p.sedute_lastDate)) || "";
-    if (lastYmd) {
-      const d = dateOnlyLocal(lastYmd);
-      if (d) {
-        acc.maxEnd = d;
-        // garantisci coerenza con minStart
-        if (acc.minStart && acc.maxEnd.getTime() < acc.minStart.getTime()) acc.maxEnd = acc.minStart;
-      }
+    // 3) Considera eventuali spostamenti (sheet "sedute") SOLO se non ho terapie parseabili
+    if (!Array.isArray(therapies) || !therapies.length) {
+      const movedMax = (p && (p.sedute_max_data || p.sedute_max || p.max_seduta_data || p.maxSedutaData || p.seduta_max_data)) || "";
+      if (movedMax) consider("", movedMax, acc);
     }
 
 
@@ -4700,9 +4687,16 @@ levelRow.querySelectorAll(".therapy-level-btn").forEach((b) => {
         });
       });
 
+      const divA = document.createElement("div");
+      divA.className = "therapy-divider";
+      const divB = document.createElement("div");
+      divB.className = "therapy-divider";
+
       card.appendChild(head);
       card.appendChild(dateRow);
+      card.appendChild(divA);
       card.appendChild(levelRow);
+      card.appendChild(divB);
       card.appendChild(daysRow);
 
       frag.appendChild(card);
