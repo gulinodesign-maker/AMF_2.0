@@ -1,7 +1,7 @@
-/* AMF_1.107 */
+/* AMF_1.108 */
 (() => {
-    const BUILD = "AMF_1.107";
-    const DISPLAY = "1.107";
+    const BUILD = "AMF_1.108";
+    const DISPLAY = "1.108";
 
   // --- Helpers
   const $ = (sel) => document.querySelector(sel);
@@ -3694,6 +3694,53 @@ function formatItMonth(dateObj) {
       if (e && (!acc.maxEnd || e.getTime() > acc.maxEnd.getTime())) acc.maxEnd = e;
     };
 
+    // Scadenza = data più lontana del calendario effettivo:
+    // - base: ultima occorrenza compatibile con giorni/orari tra data_inizio e data_fine
+    // - estensione: eventuale massimo da "sedute" (MOVE) già calcolato dal backend (sedute_max_data)
+    const effectiveEndForTherapy_ = (t, legacyEnd) => {
+      const startStr = (t && (t.data_inizio ?? t.da ?? t.start)) || (p && (p.data_inizio ?? p.start)) || "";
+      const endStr = (t && (t.data_fine ?? t.a ?? t.end)) || legacyEnd || (p && (p.data_fine ?? p.end)) || "";
+      const s = dateOnlyLocal(startStr);
+      const e = dateOnlyLocal(endStr);
+      if (!e) return endStr || "";
+
+      const map = (() => {
+        try { return parseGiorniMap(t?.giorni_settimana || t?.giorni_map || t?.giorni || {}); } catch (_) { return {}; }
+      })();
+      if (!map || typeof map !== "object") return endStr || "";
+
+      // weekday attivi con almeno un orario
+      const active = new Set();
+      Object.keys(map).forEach((k) => {
+        const dayLabel = __normDayLabel(k);
+        let wk = DAY_LABEL_TO_KEY[dayLabel];
+        if (wk == null && /^\d+$/.test(dayLabel)) {
+          const n = parseInt(dayLabel, 10);
+          if (n === 7) wk = 0;
+          else if (n >= 0 && n <= 6) wk = n;
+          else if (n >= 1 && n <= 6) wk = n;
+        }
+        if (wk == null) return;
+        const times = normalizeTimeList(map[k]);
+        if (!times.length) return;
+        active.add(wk);
+      });
+
+      if (!active.size) return endStr || "";
+
+      // Cerca l'ultima data (entro 14gg) che cade su un weekday attivo
+      const d = new Date(e);
+      d.setHours(0,0,0,0);
+      const minTs = s ? (new Date(s.setHours(0,0,0,0))).getTime() : -Infinity;
+
+      for (let k = 0; k < 14; k++) {
+        if (d.getTime() < minTs) break;
+        if (active.has(d.getDay())) return ymdLocal(d);
+        d.setDate(d.getDate() - 1);
+      }
+      return endStr || "";
+    };
+
     const acc = { minStart: null, maxEnd: null };
 
     // 1) Terapie (preferito)
@@ -3702,7 +3749,9 @@ function formatItMonth(dateObj) {
 
     if (Array.isArray(therapies) && therapies.length) {
       for (const t of therapies) {
-        consider(t?.data_inizio ?? t?.da ?? t?.start ?? "", t?.data_fine ?? t?.a ?? t?.end ?? "", acc);
+        const sStr = t?.data_inizio ?? t?.da ?? t?.start ?? "";
+        const eStr = effectiveEndForTherapy_(t, t?.data_fine ?? t?.a ?? t?.end ?? "");
+        consider(sStr, eStr, acc);
       }
     }
 
@@ -3710,16 +3759,13 @@ function formatItMonth(dateObj) {
     if (!acc.minStart && !acc.maxEnd) {
       consider(p?.data_inizio ?? p?.start ?? "", p?.data_fine ?? p?.end ?? "", acc);
     } else {
-      // se manca uno dei due estremi, prova a completare con i campi legacy
       if (!acc.minStart) consider(p?.data_inizio ?? p?.start ?? "", "", acc);
       if (!acc.maxEnd) consider("", p?.data_fine ?? p?.end ?? "", acc);
     }
-    // 3) Considera eventuali spostamenti (sheet "sedute") SOLO se non ho terapie parseabili
-    if (!Array.isArray(therapies) || !therapies.length) {
-      const movedMax = (p && (p.sedute_max_data || p.sedute_max || p.max_seduta_data || p.maxSedutaData || p.seduta_max_data)) || "";
-      if (movedMax) consider("", movedMax, acc);
-    }
 
+    // 3) Considera SEMPRE eventuali spostamenti (sheet "sedute"): estende la scadenza effettiva
+    const movedMax = (p && (p.sedute_max_data || p.sedute_max || p.max_seduta_data || p.maxSedutaData || p.seduta_max_data)) || "";
+    if (movedMax) consider("", movedMax, acc);
 
     return {
       start: acc.minStart,
@@ -5415,7 +5461,7 @@ async function renderSocietaDeleteList() {
   // PWA (iOS): registra Service Worker
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {
-      navigator.serviceWorker.register("./service-worker.js?v=1.105").catch(() => {});
+      navigator.serviceWorker.register("./service-worker.js?v=1.108").catch(() => {});
     });
   }
 })();
