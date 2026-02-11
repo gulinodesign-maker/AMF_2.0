@@ -1,7 +1,7 @@
-/* AMF_1.108 */
+/* AMF_1.109 */
 (() => {
-    const BUILD = "AMF_1.108";
-    const DISPLAY = "1.108";
+    const BUILD = "AMF_1.109";
+    const DISPLAY = "1.109";
 
   // --- Helpers
   const $ = (sel) => document.querySelector(sel);
@@ -3696,7 +3696,7 @@ function formatItMonth(dateObj) {
 
     // Scadenza = data più lontana del calendario effettivo:
     // - base: ultima occorrenza compatibile con giorni/orari tra data_inizio e data_fine
-    // - estensione: eventuale massimo da "sedute" (MOVE) già calcolato dal backend (sedute_max_data)
+    // - non usa più il foglio "sedute" per calcolare la scadenza (richiesta: scadenza da calendario)
     const effectiveEndForTherapy_ = (t, legacyEnd) => {
       const startStr = (t && (t.data_inizio ?? t.da ?? t.start)) || (p && (p.data_inizio ?? p.start)) || "";
       const endStr = (t && (t.data_fine ?? t.a ?? t.end)) || legacyEnd || (p && (p.data_fine ?? p.end)) || "";
@@ -3762,11 +3762,6 @@ function formatItMonth(dateObj) {
       if (!acc.minStart) consider(p?.data_inizio ?? p?.start ?? "", "", acc);
       if (!acc.maxEnd) consider("", p?.data_fine ?? p?.end ?? "", acc);
     }
-
-    // 3) Considera SEMPRE eventuali spostamenti (sheet "sedute"): estende la scadenza effettiva
-    const movedMax = (p && (p.sedute_max_data || p.sedute_max || p.max_seduta_data || p.maxSedutaData || p.seduta_max_data)) || "";
-    if (movedMax) consider("", movedMax, acc);
-
     return {
       start: acc.minStart,
       end: acc.maxEnd,
@@ -5461,7 +5456,7 @@ async function renderSocietaDeleteList() {
   // PWA (iOS): registra Service Worker
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {
-      navigator.serviceWorker.register("./service-worker.js?v=1.108").catch(() => {});
+      navigator.serviceWorker.register("./service-worker.js?v=1.109").catch(() => {});
     });
   }
 })();

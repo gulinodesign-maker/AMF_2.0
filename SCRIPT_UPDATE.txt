@@ -1,1 +1,1 @@
-nessun aggiornamento script (usa Code_1.102.gs)
+SCRIPT: nessun aggiornamento Apps Script richiesto. NON pubblicare il nuovo script.
