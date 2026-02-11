@@ -1,7 +1,7 @@
-/* AMF_1.110 */
+/* AMF_1.111 */
 (() => {
-    const BUILD = "AMF_1.110";
-    const DISPLAY = "1.110";
+    const BUILD = "AMF_1.111";
+    const DISPLAY = "1.111";
 
   // --- Helpers
   const $ = (sel) => document.querySelector(sel);
@@ -5547,7 +5547,7 @@ async function renderSocietaDeleteList() {
   // PWA (iOS): registra Service Worker
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {
-      navigator.serviceWorker.register("./service-worker.js?v=1.110").catch(() => {});
+      navigator.serviceWorker.register("./service-worker.js?v=1.111").catch(() => {});
     });
   }
 })();

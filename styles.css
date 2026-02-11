@@ -1182,6 +1182,7 @@ select.field{ appearance: none; }
   --cal-cell-h: 54px;
   --cal-cell-w: 40px;
   --cal-gap: 2px;
+  --cal-hours-w: clamp(86px, 22vw, 104px);
 }
 .calendar-wrap{
   padding: 18px 3px 22px;
@@ -1214,7 +1215,7 @@ select.field{ appearance: none; }
 
 .calendar-nav{
   display: grid;
-  grid-template-columns: 1fr auto 1fr;
+  grid-template-columns: minmax(0, 1fr) auto max-content;
   align-items: center;
   gap: 8px;
   margin: -8px 0 16px;
@@ -1230,6 +1231,9 @@ select.field{ appearance: none; }
   align-items:center;
   justify-content:flex-end;
 }
+
+.calendar-nav-right{ min-width: max-content; }
+.calendar-nav-center{ min-width: max-content; }
 .calendar-nav-left{
   display:flex;
   align-items:center;
@@ -1244,7 +1248,8 @@ select.field{ appearance: none; }
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 220px;
+  max-width: 100%;
+  min-width: 0;
 }
 
 .cal-cell.now-focus{
@@ -1254,7 +1259,7 @@ select.field{ appearance: none; }
 
 .calendar-grid{
   display:grid;
-  grid-template-columns: 78px 1fr;
+  grid-template-columns: var(--cal-hours-w) 1fr;
   grid-template-rows: var(--cal-cell-h) 1fr;
   gap: 0;
   align-items: stretch;
@@ -1264,7 +1269,7 @@ select.field{ appearance: none; }
 .cal-corner{
   grid-column: 1;
   grid-row: 1;
-  width: 78px;
+  width: var(--cal-hours-w);
   height: var(--cal-cell-h);
   background: transparent;
 }
@@ -1329,6 +1334,13 @@ select.field{ appearance: none; }
   letter-spacing: .2px;
   opacity: .80;
   color: var(--text);
+}
+
+.cal-hour{
+  font-size: 12px;
+  line-height: 1;
+  padding: 0 6px;
+  box-sizing: border-box;
 }
 
 .cal-day{
@@ -1576,7 +1588,8 @@ select.field{ appearance: none; }
 .month-tab{
   flex: 0 1 auto;
   min-width: 0;
-  max-width: 220px;
+  max-width: 100%;
+  min-width: 0;
   height: 40px;
   padding: 0 14px;
   border-radius: 14px;
