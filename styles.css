@@ -1056,9 +1056,10 @@ select.field{ appearance: none; }
 .therapy-del{
   position:absolute;
   right: 0;
-  top: 0;
-  width: 42px;
-  height: 42px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 30px;
+  height: 30px;
   border-radius: 999px;
   border: 1px solid rgba(0,0,0,.08);
   background: rgba(42,116,184,.80);
@@ -1070,8 +1071,8 @@ select.field{ appearance: none; }
   opacity: .80;
 }
 .therapy-del svg{
-  width: 18px;
-  height: 18px;
+  width: 14px;
+  height: 14px;
   fill:none;
   stroke: rgba(255,255,255,.98);
   stroke-width: 2.6;

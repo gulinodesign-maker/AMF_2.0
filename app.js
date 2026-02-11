@@ -1,7 +1,7 @@
-/* AMF_1.102 */
+/* AMF_1.103 */
 (() => {
-    const BUILD = "AMF_1.102";
-    const DISPLAY = "1.102";
+    const BUILD = "AMF_1.103";
+    const DISPLAY = "1.103";
 
   // --- Helpers
   const $ = (sel) => document.querySelector(sel);
@@ -4460,7 +4460,9 @@ function formatItMonth(dateObj) {
       del.className = "therapy-del";
       del.setAttribute("aria-label", "Rimuovi terapia");
       del.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12"></path><path d="M18 6l-12 12"></path></svg>';
-      if (i === 0) del.style.display = "none";
+      // Mostra la X solo in modifica paziente
+
+      if (!patientEditEnabled) del.style.display = "none";
 
       head.appendChild(title);
       head.appendChild(del);
@@ -4526,12 +4528,23 @@ function formatItMonth(dateObj) {
       del.addEventListener("click", () => {
         if (!patientEditEnabled) return;
         ensureCurrentTherapies_();
-        if (i === 0) return;
-        currentPatient.terapie_arr.splice(i, 1);
+        const arr2 = currentPatient.terapie_arr;
+        if (!Array.isArray(arr2) || !arr2.length) {
+          currentPatient.terapie_arr = [normalizeTherapy_({})];
+          activeTherapyIndex = 0;
+          renderTherapiesUI_();
+          return;
+        }
+        // Consenti rimozione anche della prima terapia; mantieni sempre almeno 1 card.
+        if (arr2.length === 1) {
+          currentPatient.terapie_arr[0] = normalizeTherapy_({});
+        } else {
+          currentPatient.terapie_arr.splice(i, 1);
+        }
+        if (activeTherapyIndex >= currentPatient.terapie_arr.length) activeTherapyIndex = 0;
         renderTherapiesUI_();
       });
-
-      levelRow.querySelectorAll(".therapy-level-btn").forEach((b) => {
+levelRow.querySelectorAll(".therapy-level-btn").forEach((b) => {
         b.addEventListener("click", () => {
           if (!patientEditEnabled) return;
           ensureCurrentTherapies_();
@@ -5317,7 +5330,7 @@ async function renderSocietaDeleteList() {
   // PWA (iOS): registra Service Worker
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {
-      navigator.serviceWorker.register("./service-worker.js?v=1.102").catch(() => {});
+      navigator.serviceWorker.register("./service-worker.js?v=1.103").catch(() => {});
     });
   }
 })();
