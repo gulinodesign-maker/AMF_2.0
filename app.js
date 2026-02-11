@@ -1,7 +1,7 @@
-/* AMF_1.102 */
+/* AMF_1.101 */
 (() => {
-    const BUILD = "AMF_1.102";
-    const DISPLAY = "1.102";
+    const BUILD = "AMF_1.101";
+    const DISPLAY = "1.101";
 
   // --- Helpers
   const $ = (sel) => document.querySelector(sel);
@@ -2937,17 +2937,6 @@ async function ensurePatientsForCalendar() {
 
       const endDragCleanup = () => {
         try { document.body.classList.remove("cal-dragging"); } catch (_) {}
-        // Ripristina scroll calendario (Android: evita che il drag venga interpretato come scroll)
-        try {
-          if (calDragState && calScroll) {
-            if (calDragState._scrollBlocker) {
-              try { calScroll.removeEventListener("touchmove", calDragState._scrollBlocker); } catch (_) {}
-            }
-            if (typeof calDragState._prevOverflow !== "undefined") calScroll.style.overflow = calDragState._prevOverflow;
-            if (typeof calDragState._prevTouchAction !== "undefined") calScroll.style.touchAction = calDragState._prevTouchAction;
-            if (typeof calDragState._prevWebkitScroll !== "undefined") calScroll.style.webkitOverflowScrolling = calDragState._prevWebkitScroll;
-          }
-        } catch (_) {}
         try { calBody && calBody.querySelectorAll(".cal-cell.drop-target").forEach((x) => x.classList.remove("drop-target")); } catch (_) {}
         try { calBody && calBody.querySelectorAll(".cal-cell.drag-source").forEach((x) => x.classList.remove("drag-source")); } catch (_) {}
         if (calDragState && calDragState.ghost && calDragState.ghost.parentNode) {
@@ -3091,29 +3080,11 @@ async function ensurePatientsForCalendar() {
             fromTime: String(cell.dataset.time || ""),
             ghost: null,
             ghostOffsetX: 0,
-            ghostOffsetY: 0,
-            _prevOverflow: (calScroll && calScroll.style ? calScroll.style.overflow : ""),
-            _prevTouchAction: (calScroll && calScroll.style ? calScroll.style.touchAction : ""),
-            _prevWebkitScroll: (calScroll && calScroll.style ? calScroll.style.webkitOverflowScrolling : "")
+            ghostOffsetY: 0
           };
 
           try { document.body.classList.add("cal-dragging"); } catch (_) {}
           try { cell.classList.add("drag-source"); } catch (_) {}
-
-          // Android: durante il drag blocca lo scroll del calendario, altrimenti il gesto viene intercettato come pan
-          try {
-            if (calScroll && calScroll.style) {
-              calScroll.style.overflow = "hidden";
-              calScroll.style.touchAction = "none";
-              calScroll.style.webkitOverflowScrolling = "auto";
-              const blocker = (e) => {
-                if (!calDragState || !calDragState.dragging) return;
-                try { e.preventDefault(); } catch (_) {}
-              };
-              calDragState._scrollBlocker = blocker;
-              try { calScroll.addEventListener("touchmove", blocker, { passive: false }); } catch (_) {}
-            }
-          } catch (_) {}
 
           // ghost
           try {

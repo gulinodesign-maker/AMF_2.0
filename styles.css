@@ -2018,11 +2018,6 @@ select.field{ appearance: none; }
 
 /* Drag & drop sedute (Calendario) */
 body.cal-dragging { touch-action: none; }
-body.cal-dragging #calScroll{
-  touch-action: none;
-  overscroll-behavior: contain;
-  -webkit-overflow-scrolling: auto;
-}
 .cal-cell.drag-source { outline: 2px solid rgba(0,160,255,0.9); outline-offset: -2px; }
 .cal-cell.drop-target { outline: 3px solid rgba(0,160,255,0.9); outline-offset: -3px; }
 .cal-drag-ghost{
