@@ -1,7 +1,7 @@
-/* AMF_1.108 */
+/* AMF_1.107 */
 (() => {
-    const BUILD = "AMF_1.108";
-    const DISPLAY = "1.108";
+    const BUILD = "AMF_1.107";
+    const DISPLAY = "1.107";
 
   // --- Helpers
   const $ = (sel) => document.querySelector(sel);
@@ -2311,7 +2311,7 @@ function buildCalendarSlotsFromPatients(patients) {
         weekdayEntries.forEach(({ wk: wk2, key }) => {
           if (wk2 !== wk) return;
 
-          if (!inRange(cellDate, th.data_inizio || p.__base_data_inizio || p.data_inizio, th.data_fine || p.__base_data_fine || p.data_fine)) return;
+          if (!inRange(cellDate, th.data_inizio || p.data_inizio, th.data_fine || p.data_fine)) return;
 
           const times = normalizeTimeList(map[key]);
           if (!times.length) return;
@@ -2878,7 +2878,6 @@ async function ensurePatientsForCalendar() {
             if (currentView === "pazienti") renderPatients();
             if (currentView === "stats") await renderStatsTable_();
           } catch (_) {}
-
         } catch (err) {
           if (apiHintIfUnknownAction(err)) return;
           toast(String(err && err.message ? err.message : "Errore cancellazione"));
@@ -3715,22 +3714,10 @@ function formatItMonth(dateObj) {
       if (!acc.minStart) consider(p?.data_inizio ?? p?.start ?? "", "", acc);
       if (!acc.maxEnd) consider("", p?.data_fine ?? p?.end ?? "", acc);
     }
-    // 3) Considera eventuali spostamenti (sheet "sedute"): estende la scadenza se una seduta è stata spostata avanti nel tempo
-    const movedMax = (p && (p.sedute_max_data || p.sedute_max || p.max_seduta_data || p.maxSedutaData || p.seduta_max_data)) || "";
-    if (movedMax) {
-      // aggiorna solo l'estremo finale (passa start vuoto)
-      consider("", movedMax, acc);
-    }
-
-    // 4) Scadenza reale: ultima data effettiva letta dal calendario (considera MOVE + CANCEL)
-    const lastYmd = (p && (p.sedute_last_data || p.sedute_last || p.sedute_last_date || p.sedute_lastDate)) || "";
-    if (lastYmd) {
-      const d = dateOnlyLocal(lastYmd);
-      if (d) {
-        acc.maxEnd = d;
-        // garantisci coerenza con minStart
-        if (acc.minStart && acc.maxEnd.getTime() < acc.minStart.getTime()) acc.maxEnd = acc.minStart;
-      }
+    // 3) Considera eventuali spostamenti (sheet "sedute") SOLO se non ho terapie parseabili
+    if (!Array.isArray(therapies) || !therapies.length) {
+      const movedMax = (p && (p.sedute_max_data || p.sedute_max || p.max_seduta_data || p.maxSedutaData || p.seduta_max_data)) || "";
+      if (movedMax) consider("", movedMax, acc);
     }
 
 
@@ -3803,16 +3790,7 @@ function formatItMonth(dateObj) {
     try {
       const data = await apiCached("listPatients", { userId: user.id }, 8000);
       patientsCache = Array.isArray(data.pazienti) ? data.pazienti : [];
-      
-      try {
-        // snapshot range dates for calendar generation (do not extend with MOVE)
-        (patientsCache || []).forEach((p) => {
-          if (!p || typeof p !== 'object') return;
-          if (p.__base_data_inizio == null) p.__base_data_inizio = String(p.data_inizio || '');
-          if (p.__base_data_fine == null) p.__base_data_fine = String(p.data_fine || '');
-        });
-      } catch (_) {}
-patientsLoaded = true;
+      patientsLoaded = true;
       patientsLoadedForUserId = user.id || null;
       if (render) renderPatients();
     } catch (err) {
@@ -4709,15 +4687,16 @@ levelRow.querySelectorAll(".therapy-level-btn").forEach((b) => {
         });
       });
 
+      const divA = document.createElement("div");
+      divA.className = "therapy-divider";
+      const divB = document.createElement("div");
+      divB.className = "therapy-divider";
+
       card.appendChild(head);
       card.appendChild(dateRow);
-      const sep1 = document.createElement("div");
-      sep1.className = "therapy-sep";
-      card.appendChild(sep1);
+      card.appendChild(divA);
       card.appendChild(levelRow);
-      const sep2 = document.createElement("div");
-      sep2.className = "therapy-sep";
-      card.appendChild(sep2);
+      card.appendChild(divB);
       card.appendChild(daysRow);
 
       frag.appendChild(card);
