@@ -2873,6 +2873,12 @@ async function ensurePatientsForCalendar() {
           invalidateStatsMovesCache_();
           toast("Cancellato");
           await updateCalendarUI();
+          try {
+            await loadPatients({ render: false });
+            if (currentView === "pazienti") renderPatients();
+            if (currentView === "stats") await renderStatsTable_();
+          } catch (_) {}
+
         } catch (err) {
           if (apiHintIfUnknownAction(err)) return;
           toast(String(err && err.message ? err.message : "Errore cancellazione"));
@@ -3714,6 +3720,17 @@ function formatItMonth(dateObj) {
     if (movedMax) {
       // aggiorna solo l'estremo finale (passa start vuoto)
       consider("", movedMax, acc);
+    }
+
+    // 4) Scadenza reale: ultima data effettiva letta dal calendario (considera MOVE + CANCEL)
+    const lastYmd = (p && (p.sedute_last_data || p.sedute_last || p.sedute_last_date || p.sedute_lastDate)) || "";
+    if (lastYmd) {
+      const d = dateOnlyLocal(lastYmd);
+      if (d) {
+        acc.maxEnd = d;
+        // garantisci coerenza con minStart
+        if (acc.minStart && acc.maxEnd.getTime() < acc.minStart.getTime()) acc.maxEnd = acc.minStart;
+      }
     }
 
 
@@ -4684,8 +4701,8 @@ levelRow.querySelectorAll(".therapy-level-btn").forEach((b) => {
       });
 
       card.appendChild(head);
-      card.appendChild(levelRow);
       card.appendChild(dateRow);
+      card.appendChild(levelRow);
       card.appendChild(daysRow);
 
       frag.appendChild(card);
