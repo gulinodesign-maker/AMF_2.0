@@ -1127,13 +1127,6 @@ select.field{ appearance: none; }
   min-width:0;
 }
 
-
-.therapy-sep{
-  height:3px;
-  background:#000;
-  border-radius: 2px;
-  margin: 10px 10px;
-}
 .therapy-add-row{
   width:100%;
   display:flex;

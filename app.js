@@ -1,7 +1,7 @@
-/* AMF_1.107 */
+/* AMF_1.105 */
 (() => {
-    const BUILD = "AMF_1.107";
-    const DISPLAY = "1.107";
+    const BUILD = "AMF_1.105";
+    const DISPLAY = "1.105";
 
   // --- Helpers
   const $ = (sel) => document.querySelector(sel);
@@ -4702,13 +4702,7 @@ levelRow.querySelectorAll(".therapy-level-btn").forEach((b) => {
 
       card.appendChild(head);
       card.appendChild(dateRow);
-      const sep1 = document.createElement("div");
-      sep1.className = "therapy-sep";
-      card.appendChild(sep1);
       card.appendChild(levelRow);
-      const sep2 = document.createElement("div");
-      sep2.className = "therapy-sep";
-      card.appendChild(sep2);
       card.appendChild(daysRow);
 
       frag.appendChild(card);
