@@ -1,7 +1,7 @@
-/* AMF_1.109 */
+/* AMF_1.110 */
 (() => {
-    const BUILD = "AMF_1.109";
-    const DISPLAY = "1.109";
+    const BUILD = "AMF_1.110";
+    const DISPLAY = "1.110";
 
   // --- Helpers
   const $ = (sel) => document.querySelector(sel);
@@ -1742,6 +1742,11 @@ document.querySelectorAll("[data-route]").forEach((btn) => {
   let calBuilt = false;
   let calSlotPatients = new Map(); // key "dayKey|HH:MM" -> {count, ids:[]}
   let calMovesCache = []; // spostamenti/override sedute per il mese corrente
+  let calMovesHorizonLoading = false;
+  let calMovesHorizonLoadedAt = 0;
+  let calMovesMaxTsByPatient = new Map(); // pid -> max date ts (midnight local) derived from calendario (moves/add)
+  const CAL_MOVES_HORIZON_MONTHS = 18; // quanto avanti leggere il calendario (mesi) per scadenze reali
+
   let calDragState = null;
 
   const CAL_COLOR_START = { r: 160, g: 160, b: 160 }; // grey
@@ -2577,6 +2582,80 @@ function collapseMoves_(moves) {
 
   return out;
 
+}
+
+async function ensureMovesHorizonLoaded_(opts = {}) {
+  try {
+    const { force = false, silent = true } = (opts || {});
+    const user = getSession();
+    if (!user || !user.id) return false;
+
+    const nowTs = Date.now();
+    if (!force && calMovesHorizonLoadedAt && (nowTs - calMovesHorizonLoadedAt) < 15000) return true;
+    if (calMovesHorizonLoading) return false;
+
+    calMovesHorizonLoading = true;
+
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
+    const months = [];
+    for (let i = 0; i <= CAL_MOVES_HORIZON_MONTHS; i++) {
+      const d = new Date(start.getFullYear(), start.getMonth() + i, 1);
+      months.push({ y: d.getFullYear(), m0: d.getMonth() });
+    }
+
+    const all = [];
+    let idx = 0;
+    const workers = Math.min(4, months.length);
+
+    async function worker() {
+      while (idx < months.length) {
+        const cur = months[idx++];
+        try {
+          const part = await fetchCalendarMovesForMonth_(cur.y, cur.m0);
+          if (Array.isArray(part) && part.length) all.push(...part);
+        } catch (_) {}
+      }
+    }
+
+    const jobs = [];
+    for (let i = 0; i < workers; i++) jobs.push(worker());
+    await Promise.all(jobs);
+
+    const moves0 = (all || []).map(normalizeMove_).filter(Boolean);
+    const moves = collapseMoves_(moves0);
+
+    const maxByPid = new Map();
+    (moves || []).forEach((mv) => {
+      if (!mv || mv.isDelete) return;
+      const pid = mv.paziente_id != null ? String(mv.paziente_id) : "";
+      if (!pid) return;
+      const ymd = String(mv.to_date || "").slice(0, 10);
+      if (!ymd) return;
+      const d = dateOnlyLocal(ymd);
+      if (!d) return;
+      d.setHours(0, 0, 0, 0);
+      const ts = d.getTime();
+      const cur = maxByPid.get(pid) || 0;
+      if (ts > cur) maxByPid.set(pid, ts);
+    });
+
+    calMovesMaxTsByPatient = maxByPid;
+    calMovesHorizonLoadedAt = Date.now();
+    calMovesHorizonLoading = false;
+
+    // aggiorna card pazienti quando arriva la scadenza reale da calendario
+    try {
+      if (currentView === "patients" || currentView === "patientForm" || currentView === "modify" || currentView === "create") {
+        renderPatients();
+      }
+    } catch (_) {}
+
+    return true;
+  } catch (err) {
+    calMovesHorizonLoading = false;
+    return false;
+  }
 }
 
 async function applyCalendarMoves_(baseSlots, patients) {
@@ -3762,6 +3841,17 @@ function formatItMonth(dateObj) {
       if (!acc.minStart) consider(p?.data_inizio ?? p?.start ?? "", "", acc);
       if (!acc.maxEnd) consider("", p?.data_fine ?? p?.end ?? "", acc);
     }
+
+    // 3) Override scadenza con la data più lontana trovata nel CALENDARIO reale (spostamenti/add)
+    try {
+      const pid = p && p.id != null ? String(p.id) : "";
+      const mvTs = pid ? (calMovesMaxTsByPatient.get(pid) || 0) : 0;
+      if (mvTs) {
+        const d = new Date(mvTs);
+        d.setHours(0, 0, 0, 0);
+        if (!acc.maxEnd || d.getTime() > acc.maxEnd.getTime()) acc.maxEnd = d;
+      }
+    } catch (_) {}
     return {
       start: acc.minStart,
       end: acc.maxEnd,
@@ -3832,6 +3922,7 @@ function formatItMonth(dateObj) {
       const data = await apiCached("listPatients", { userId: user.id }, 8000);
       patientsCache = Array.isArray(data.pazienti) ? data.pazienti : [];
       patientsLoaded = true;
+      try { ensureMovesHorizonLoaded_({ silent: true }); } catch (_) {}
       patientsLoadedForUserId = user.id || null;
       if (render) renderPatients();
     } catch (err) {
@@ -5456,7 +5547,7 @@ async function renderSocietaDeleteList() {
   // PWA (iOS): registra Service Worker
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {
-      navigator.serviceWorker.register("./service-worker.js?v=1.109").catch(() => {});
+      navigator.serviceWorker.register("./service-worker.js?v=1.110").catch(() => {});
     });
   }
 })();
