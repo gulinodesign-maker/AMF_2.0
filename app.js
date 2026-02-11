@@ -1,7 +1,7 @@
-/* AMF_1.101 */
+/* AMF_1.102 */
 (() => {
-    const BUILD = "AMF_1.101";
-    const DISPLAY = "1.101";
+    const BUILD = "AMF_1.102";
+    const DISPLAY = "1.102";
 
   // --- Helpers
   const $ = (sel) => document.querySelector(sel);
@@ -4277,8 +4277,26 @@ function formatItMonth(dateObj) {
   let activeTherapyIndex = 0;
   let activeDayForTime = "";
 
+  function genTherapyId_() {
+    // id stabile per schede terapia (necessario per upsert univoco su DB)
+    return "th_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 10);
+  }
+
   function normalizeTherapy_(t) {
-    const o = (t && typeof t === "object") ? Object.assign({}, t) : {};
+    const src = (t && typeof t === "object") ? t : null;
+    let id = "";
+    if (src) {
+      id = String(src.id || src.therapy_id || src.terapia_id || "").trim();
+      if (!id) {
+        id = genTherapyId_();
+        try { src.id = id; } catch (_) {}
+      }
+    } else {
+      id = genTherapyId_();
+    }
+
+    const o = src ? Object.assign({}, src) : {};
+    o.id = id;
     o.livello = String(o.livello || o.level || "").trim();
     o.data_inizio = String(o.data_inizio || o.start || "").trim();
     o.data_fine = String(o.data_fine || o.end || "").trim();
@@ -4287,6 +4305,18 @@ function formatItMonth(dateObj) {
     const map = parseGiorniMap(raw);
     o.giorni_map = map && typeof map === "object" ? map : {};
     return o;
+  }
+
+  function therapySignature_(th) {
+    const t = th || {};
+    const map = (t.giorni_map && typeof t.giorni_map === "object") ? t.giorni_map : {};
+    const keys = Object.keys(map).sort();
+    const parts = keys.map((k) => {
+      const v = map[k];
+      const s = Array.isArray(v) ? v.map(normTime).filter(Boolean).join(",") : normTime(v);
+      return `${String(k)}:${s}`;
+    });
+    return `${String(t.livello || "").trim()}|${String(t.data_inizio || "").trim()}|${String(t.data_fine || "").trim()}|${parts.join(",")}`;
   }
 
   function parseTherapiesFromPatient_(p) {
@@ -4306,7 +4336,16 @@ function formatItMonth(dateObj) {
 
     if (Array.isArray(arr) && arr.length) {
       const out = arr.map(normalizeTherapy_).filter(Boolean);
-      return out.length ? out : [normalizeTherapy_({})];
+      // Dedup difensivo: evita duplicazioni identiche (bug storico)
+      const seen = new Set();
+      const dedup = [];
+      for (const th of out) {
+        const sig = therapySignature_(th);
+        if (seen.has(sig)) continue;
+        seen.add(sig);
+        dedup.push(th);
+      }
+      return dedup.length ? dedup : [normalizeTherapy_({})];
     }
 
     // Fallback legacy: campi singoli
@@ -5278,7 +5317,7 @@ async function renderSocietaDeleteList() {
   // PWA (iOS): registra Service Worker
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {
-      navigator.serviceWorker.register("./service-worker.js?v=1.100").catch(() => {});
+      navigator.serviceWorker.register("./service-worker.js?v=1.102").catch(() => {});
     });
   }
 })();
