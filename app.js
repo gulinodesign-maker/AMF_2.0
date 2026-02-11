@@ -1,7 +1,7 @@
-/* AMF_1.103 */
+/* AMF_1.104 */
 (() => {
-    const BUILD = "AMF_1.103";
-    const DISPLAY = "1.103";
+    const BUILD = "AMF_1.104";
+    const DISPLAY = "1.104";
 
   // --- Helpers
   const $ = (sel) => document.querySelector(sel);
@@ -2860,9 +2860,12 @@ async function ensurePatientsForCalendar() {
           const ok = await ensureApiReady();
           if (!ok) return;
 
+          const terapiaId = getTherapyIdForPatientAtDate_(pid, from_date);
+
           await api("deleteSession", {
             userId: user.id,
             paziente_id: String(pid),
+            terapia_id: terapiaId,
             from_date,
             from_time
           });
@@ -3022,9 +3025,13 @@ async function ensurePatientsForCalendar() {
           const fromDate = ymdLocal(new Date(year, month, fromDay));
           const toDate = ymdLocal(new Date(year, month, toDay));
 
+          const effFrom = resolveOriginalSlotForPid_(pid, fromDate, fromTime);
+          const terapiaId = getTherapyIdForPatientAtDate_(pid, effFrom.from_date || fromDate);
+
           await api("moveSession", {
             userId: user.id,
             paziente_id: String(pid),
+            terapia_id: terapiaId,
             from_date: fromDate,
             from_time: normTime(fromTime),
             to_date: toDate,
@@ -4358,6 +4365,73 @@ function formatItMonth(dateObj) {
     return [legacy];
   }
 
+
+  // --- Helpers: terapia_id per spostamenti/cancellazioni sedute ---
+  function getPatientFromCacheById_(pid) {
+    const id = String(pid || "").trim();
+    if (!id) return null;
+    try {
+      const arr = Array.isArray(patientsCache) ? patientsCache : [];
+      for (let i = 0; i < arr.length; i++) {
+        const p = arr[i];
+        if (p && String(p.id || "").trim() === id) return p;
+      }
+      return null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  // Risale allo slot "originario" in caso la seduta sia già stata spostata (catena A->B->C).
+  function resolveOriginalSlotForPid_(pid, from_date, from_time) {
+    let fd = String(from_date || "").slice(0, 10);
+    let ft = normTime(from_time || "");
+    try {
+      const mvPrev = Array.isArray(calMovesCache) ? calMovesCache.find((mv) =>
+        String(mv && mv.paziente_id) === String(pid) &&
+        String(mv && mv.to_date || "").slice(0, 10) === fd &&
+        normTime(mv && mv.to_time) === ft
+      ) : null;
+
+      if (mvPrev) {
+        fd = String(mvPrev.from_date || "").slice(0, 10) || fd;
+        ft = normTime(mvPrev.from_time || "") || ft;
+      }
+    } catch (_) {}
+    return { from_date: fd, from_time: ft };
+  }
+
+  function getTherapyIdForPatientAtDate_(pid, ymd) {
+    try {
+      const p = getPatientFromCacheById_(pid);
+      if (!p) return "";
+      const target = dateOnlyLocal(String(ymd || "").slice(0, 10));
+      if (!target) return "";
+      const therapies = parseTherapiesFromPatient_(p) || [];
+      let bestId = "";
+      let bestStart = -1;
+
+      for (const th0 of therapies) {
+        const th = normalizeTherapy_(th0);
+        const s = dateOnlyLocal(th && th.data_inizio ? th.data_inizio : "");
+        const e = dateOnlyLocal(th && th.data_fine ? th.data_fine : "");
+
+        if (s && target.getTime() < s.getTime()) continue;
+        if (e && target.getTime() > e.getTime()) continue;
+
+        const st = s ? s.getTime() : 0;
+        if (st >= bestStart) {
+          bestStart = st;
+          bestId = String(th && th.id ? th.id : "").trim();
+        }
+      }
+
+      return bestId || "";
+    } catch (_) {
+      return "";
+    }
+  }
+
   function ensureCurrentTherapies_() {
     if (!currentPatient) currentPatient = {};
     if (!Array.isArray(currentPatient.terapie_arr) || !currentPatient.terapie_arr.length) {
@@ -5330,7 +5404,7 @@ async function renderSocietaDeleteList() {
   // PWA (iOS): registra Service Worker
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {
-      navigator.serviceWorker.register("./service-worker.js?v=1.103").catch(() => {});
+      navigator.serviceWorker.register("./service-worker.js?v=1.104").catch(() => {});
     });
   }
 })();
