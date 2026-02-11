@@ -1214,31 +1214,43 @@ select.field{ appearance: none; }
 }
 
 .calendar-nav{
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto max-content;
+  position: relative;
+  display:flex;
   align-items: center;
   gap: 8px;
   margin: -8px 0 16px;
-}
-.calendar-nav-center{
-  display:flex;
-  gap: 8px;
-  align-items:center;
-  justify-content:center;
-}
-.calendar-nav-right{
-  display:flex;
-  align-items:center;
-  justify-content:flex-end;
+  min-height: 44px;
 }
 
-.calendar-nav-right{ min-width: max-content; }
-.calendar-nav-center{ min-width: max-content; }
+/* Left can shrink; keep text readable but never steal the center */
 .calendar-nav-left{
   display:flex;
   align-items:center;
   justify-content:flex-start;
+  flex: 1 1 auto;
   min-width: 0;
+  max-width: calc(50% - 84px);
+}
+
+/* Center is always visually centered (does not drift) */
+.calendar-nav-center{
+  position:absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  display:flex;
+  gap: 8px;
+  align-items:center;
+  justify-content:center;
+  min-width: max-content;
+}
+
+/* Right button never gets clipped */
+.calendar-nav-right{
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  flex: 0 0 auto;
+  min-width: max-content;
 }
 .cal-nowinfo{
   font-size: 12px;
@@ -1287,7 +1299,7 @@ select.field{ appearance: none; }
   grid-auto-flow: column;
   grid-auto-columns: var(--cal-cell-w);
   gap: 2px;
-  padding: 2px 3px;
+  padding: 2px 1px;
 }
 
 /* First column: hours 07:30..21:00 (vertical scroll only) */
@@ -1303,7 +1315,7 @@ select.field{ appearance: none; }
   grid-auto-flow: row;
   grid-auto-rows: var(--cal-cell-h);
   gap: 2px;
-  padding: 2px 3px;
+  padding: 2px 1px;
 }
 
 /* Body: scroll both axes, synced with header/left column */
@@ -1318,7 +1330,7 @@ select.field{ appearance: none; }
   grid-template-columns: repeat(31, var(--cal-cell-w));
   grid-auto-rows: var(--cal-cell-h);
   gap: 2px;
-  padding: 2px 3px;
+  padding: 2px 1px;
 }
 
 .cal-day,
@@ -1338,7 +1350,7 @@ select.field{ appearance: none; }
 
 .cal-hour{
   font-size: 12px;
-  line-height: 1;
+  line-height: 1.2;
   padding: 0 6px;
   box-sizing: border-box;
 }

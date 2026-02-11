@@ -1,6 +1,6 @@
-/* AMF_1.111 */
+/* AMF_1.112 */
 (() => {
-    const BUILD = "AMF_1.111";
+    const BUILD = "AMF_1.112";
     const DISPLAY = "1.111";
 
   // --- Helpers
