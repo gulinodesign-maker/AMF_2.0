@@ -1,7 +1,7 @@
-/* AMF_1.100 */
+/* AMF_1.101 */
 (() => {
-    const BUILD = "AMF_1.100";
-    const DISPLAY = "1.100";
+    const BUILD = "AMF_1.101";
+    const DISPLAY = "1.101";
 
   // --- Helpers
   const $ = (sel) => document.querySelector(sel);
@@ -3702,6 +3702,13 @@ function formatItMonth(dateObj) {
       if (!acc.minStart) consider(p?.data_inizio ?? p?.start ?? "", "", acc);
       if (!acc.maxEnd) consider("", p?.data_fine ?? p?.end ?? "", acc);
     }
+    // 3) Considera eventuali spostamenti (sheet "sedute"): estende la scadenza se una seduta è stata spostata avanti nel tempo
+    const movedMax = (p && (p.sedute_max_data || p.sedute_max || p.max_seduta_data || p.maxSedutaData || p.seduta_max_data)) || "";
+    if (movedMax) {
+      // aggiorna solo l'estremo finale (passa start vuoto)
+      consider("", movedMax, acc);
+    }
+
 
     return {
       start: acc.minStart,
