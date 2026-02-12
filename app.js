@@ -6,29 +6,6 @@
   // --- Helpers
   const $ = (sel) => document.querySelector(sel);
 
-
-  // --- Perf scheduling (iOS-friendly): keep UI responsive
-  const _sleep_ = (ms) => new Promise((r) => setTimeout(r, ms));
-  const _raf_ = () => new Promise((r) => requestAnimationFrame(() => r()));
-  async function yieldToMain_(minDelay = 0) {
-    try { await _raf_(); } catch (_) {}
-    if (minDelay > 0) await _sleep_(minDelay);
-  }
-  function runInIdle_(fn, timeout = 1200) {
-    try {
-      if (typeof requestIdleCallback === "function") {
-        requestIdleCallback(() => { try { fn && fn(); } catch (_) {} }, { timeout });
-      } else {
-        setTimeout(() => { try { fn && fn(); } catch (_) {} }, 0);
-      }
-    } catch (_) {
-      try { setTimeout(() => { try { fn && fn(); } catch (_) {} }, 0); } catch (_) {}
-    }
-  }
-  function runInBackground_(fn) {
-    runInIdle_(() => { try { fn && fn(); } catch (_) {} }, 2000);
-  }
-
   const toastEl = $("#toast");
   let toastTimer = null;
   function toast(msg) {
@@ -1717,24 +1694,15 @@ async function openStatsFlow() {
     const titleEl = $("#topbarTitle");
     if (titleEl) titleEl.textContent = "Fatturati & Accessi";
 
-    // Apertura pagina immediata
+    try { await loadSocietaCache(false); } catch (_) {}
+    try { await loadPatients({ render: false }); } catch (_) {}
+
+    bindStatsHandlersOnce_();
+    renderStatsSocDots_();
+    renderStatsLevelDots_();
+    await renderStatsTable_();
+
     showView("stats");
-    try { await yieldToMain_(0); } catch (_) {}
-
-    // Caricamenti e calcoli in background
-    runInBackground_(() => {
-      (async () => {
-        try { await loadSocietaCache(false); } catch (_) {}
-        try { await loadPatients({ render: false }); } catch (_) {}
-
-        bindStatsHandlersOnce_();
-        renderStatsSocDots_();
-        renderStatsLevelDots_();
-
-        await yieldToMain_(0);
-        await renderStatsTable_();
-      })().catch(() => {});
-    });
   }
 document.querySelectorAll("[data-route]").forEach((btn) => {
     btn.addEventListener("click", async () => {
@@ -1773,11 +1741,7 @@ document.querySelectorAll("[data-route]").forEach((btn) => {
   let calHours = [];
   let calBuilt = false;
   let calSlotPatients = new Map(); // key "dayKey|HH:MM" -> {count, ids:[]}
-  let calCellMap = new Map(); // key "day|HH:MM" -> cell element
-  let calDirtyKeys = new Set(); // keys of cells filled in last paint
-  let calMovesHorizonLoadedMonths = 0; // last loaded horizon months
   let calMovesCache = []; // spostamenti/override sedute per il mese corrente
-  const calMovesMonthCache_ = new Map(); // "YYYY-MM" -> {ts, moves}
   let calMovesHorizonLoading = false;
   let calMovesHorizonLoadedAt = 0;
   let calMovesMaxTsByPatient = new Map(); // pid -> max date ts (midnight local) derived from calendario (moves/add)
@@ -2061,7 +2025,7 @@ async function loadSocietaCache(force = false) {
   if (!user || !user.id) return [];
   if (societaCache && !force) return societaCache;
   try {
-    const data = await apiCached("listSocieta", { userId: user.id }, 60000);
+    const data = await apiCached("listSocieta", { userId: user.id }, 15000);
     const arr = Array.isArray(data && data.societa) ? data.societa : [];
     societaCache = arr;
     buildSocietaMap_(arr);
@@ -2254,27 +2218,6 @@ function getSocTagIndexById(id) {
 function clearCalendarCells() {
   if (!calBody) return;
   if (calSlotPatients && calSlotPatients.clear) calSlotPatients.clear();
-
-  // Clear only previously filled cells (dirty set) to avoid full scans
-  const dirty = (calDirtyKeys && calDirtyKeys.forEach) ? calDirtyKeys : null;
-  if (dirty) {
-    dirty.forEach((key) => {
-      const cell = (calCellMap && calCellMap.get) ? calCellMap.get(key) : null;
-      if (!cell) return;
-      const d = parseInt(cell.dataset.day || "0", 10);
-      if (d >= 1 && d <= 31) {
-        const col = calColorForDay(d);
-        cell.style.backgroundColor = rgba(col, 0.25);
-      }
-      cell.classList.remove("filled");
-      cell.innerHTML = "";
-      cell.removeAttribute("title");
-    });
-    try { calDirtyKeys.clear(); } catch (_) {}
-    return;
-  }
-
-  // Fallback
   calBody.querySelectorAll(".cal-cell").forEach((c) => {
     const d = parseInt(c.dataset.day || "0", 10);
     if (d >= 1 && d <= 31) {
@@ -2287,59 +2230,127 @@ function clearCalendarCells() {
   });
 }
 
+function initialsFromName(fullName) {
+  const s = String(fullName || "").trim();
+  if (!s) return "";
+  const parts = s.split(/\s+/).filter(Boolean);
+  if (parts.length === 1) {
+    const w = parts[0].toUpperCase();
+    return w.slice(0, 2);
+  }
+  const first = parts[0].charAt(0).toUpperCase();
+  const last = parts[parts.length - 1].charAt(0).toUpperCase();
+  return first + last;
+}
+
+function buildCalendarSlotsFromPatients(patients) {
+  const year = calSelectedDate.getFullYear();
+  const month = calSelectedDate.getMonth();
+  const daysInThisMonth = new Date(year, month + 1, 0).getDate();
+
+  function dateForDayNumber(dayNum) {
+    if (dayNum < 1 || dayNum > daysInThisMonth) return null;
+    const d = new Date(year, month, dayNum);
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }
+
+  function weekdayKeyForDate(d) {
+    if (!d) return null;
+    return d.getDay(); // 0=Sun..6=Sat (Sun supported)
+  }
+
+  function inRange(cellDate, startStr, endStr) {
+    const s = dateOnlyLocal(startStr);
+    const e = dateOnlyLocal(endStr);
+    if (!s && !e) return true;
+    if (!cellDate) return false;
+
+    const d = new Date(cellDate);
+    d.setHours(0, 0, 0, 0);
+
+    if (s && d.getTime() < s.getTime()) return false;
+    if (e && d.getTime() > e.getTime()) return false;
+    return true;
+  }
+
+  const slots = new Map(); // key -> {count, names:[], ids:[], tags:[]}
+
+  (patients || []).forEach((p) => {
+    if (!p || p.isDeleted) return;
+
+    const therapies = parseTherapiesFromPatient_(p);
+    if (!Array.isArray(therapies) || !therapies.length) return;
+
+    therapies.forEach((th) => {
+      if (!th) return;
+
+      const map = th.giorni_map && typeof th.giorni_map === "object" ? th.giorni_map : {};
+      if (!Object.keys(map).length) return;
+
+      // weekday keys for this therapy
+      const weekdayEntries = [];
+      Object.keys(map).forEach((k) => {
+        const dayLabel = __normDayLabel(k);
+        let wk = DAY_LABEL_TO_KEY[dayLabel];
+
+        if (wk == null && /^\d+$/.test(dayLabel)) {
+          const n = parseInt(dayLabel, 10);
+          if (n === 7) wk = 0; // Sunday
+          else if (n >= 0 && n <= 6) wk = n;
+          else if (n >= 1 && n <= 6) wk = n;
+        }
+
+        if (wk == null) return;
+        weekdayEntries.push({ wk, key: k });
+      });
+
+      if (!weekdayEntries.length) return;
+
+      for (let dayNum = 1; dayNum <= 31; dayNum++) {
+        const cellDate = dateForDayNumber(dayNum);
+        if (!cellDate) continue;
+
+        const wk = weekdayKeyForDate(cellDate);
+
+        weekdayEntries.forEach(({ wk: wk2, key }) => {
+          if (wk2 !== wk) return;
+
+          if (!inRange(cellDate, th.data_inizio || p.data_inizio, th.data_fine || p.data_fine)) return;
+
+          const times = normalizeTimeList(map[key]);
+          if (!times.length) return;
+
+          times.forEach((t) => {
+            const slotKey = `${dayNum}|${t}`;
+            const prev = slots.get(slotKey) || { count: 0, names: [], ids: [], tags: [] };
+
+            // Dedup: non permettere lo stesso paziente due volte nello stesso slot
+            const pid = p.id != null ? String(p.id) : "";
+            const exists = Array.isArray(prev.ids) && prev.ids.some((x) => String(x) === pid);
+            if (!exists) {
+              prev.names.push(patientDisplayName(p) || "Paziente");
+              prev.ids.push(pid);
+              prev.tags.push(getSocTagIndexById(p.societa_id || ""));
+              prev.count = prev.ids.length;
+              slots.set(slotKey, prev);
+            } else {
+              prev.count = Array.isArray(prev.ids) ? prev.ids.length : Math.max(0, prev.count || 0);
+              slots.set(slotKey, prev);
+            }
+          });
+        });
+      }
+    });
+  });
+
+  return slots;
+}
+
 function paintCalendarSlots(slots) {
   if (!calBody) return;
   calSlotPatients = slots;
 
-  // Paint only filled slots (fast path)
-  const map = (calCellMap && calCellMap.get) ? calCellMap : null;
-  if (map && slots && slots.forEach) {
-    slots.forEach((info, key) => {
-      if (!info || !info.count) return;
-      const cell = map.get(key);
-      if (!cell) return;
-
-      const dayNum = parseInt(cell.dataset.day || "0", 10);
-      cell.classList.add("filled");
-
-      {
-        const tag = Array.isArray(info.tags) && info.tags.length ? info.tags[0] : null;
-        if (tag !== null && tag !== undefined && SOC_TAG_COLORS[tag] !== undefined) {
-          cell.style.backgroundColor = hexToRgba(SOC_TAG_COLORS[tag], 0.50);
-        } else {
-          const col = calColorForDay(dayNum);
-          cell.style.backgroundColor = rgba(col, 0.50);
-        }
-      }
-
-      // Initials
-      const initialsList = (info.names || []).map(initialsFromName).filter(Boolean);
-      const uniq = [];
-      initialsList.forEach((x) => { if (!uniq.includes(x)) uniq.push(x); });
-      let initialsText = uniq.slice(0, 3).join(" ");
-      if (uniq.length > 3) initialsText += ` +${uniq.length - 3}`;
-      if (initialsText) {
-        const ini = document.createElement("div");
-        ini.className = "cal-initials";
-        ini.textContent = initialsText;
-        cell.appendChild(ini);
-      }
-      if (info.count === 1) {
-        cell.title = info.names[0] || "";
-      } else {
-        cell.title = `${info.count} pazienti`;
-        const badge = document.createElement("div");
-        badge.className = "cal-badge";
-        badge.textContent = String(info.count);
-        cell.appendChild(badge);
-      }
-
-      try { calDirtyKeys.add(key); } catch (_) {}
-    });
-    return;
-  }
-
-  // Fallback: legacy scan
   calBody.querySelectorAll(".cal-cell").forEach((cell) => {
     const dayNum = parseInt(cell.dataset.day || "0", 10);
     const t = cell.dataset.time || "";
@@ -2359,6 +2370,7 @@ function paintCalendarSlots(slots) {
       }
     }
 
+    // Initials
     const initialsList = (info.names || []).map(initialsFromName).filter(Boolean);
     const uniq = [];
     initialsList.forEach((x) => { if (!uniq.includes(x)) uniq.push(x); });
@@ -2574,33 +2586,27 @@ function collapseMoves_(moves) {
 
 async function ensureMovesHorizonLoaded_(opts = {}) {
   try {
-    const { force = false, silent = true, monthsAhead = CAL_MOVES_HORIZON_MONTHS } = (opts || {});
+    const { force = false, silent = true } = (opts || {});
     const user = getSession();
     if (!user || !user.id) return false;
 
-    const targetMonths = Math.max(0, Math.min(CAL_MOVES_HORIZON_MONTHS, Number(monthsAhead) || 0));
     const nowTs = Date.now();
-
-    // Cooldown più lungo per evitare reload durante navigazione rapida
-    const COOLDOWN_MS = 60000;
-
-    if (!force && calMovesHorizonLoadedMonths >= targetMonths && calMovesHorizonLoadedAt && (nowTs - calMovesHorizonLoadedAt) < COOLDOWN_MS) return true;
+    if (!force && calMovesHorizonLoadedAt && (nowTs - calMovesHorizonLoadedAt) < 15000) return true;
     if (calMovesHorizonLoading) return false;
 
     calMovesHorizonLoading = true;
 
-    const startDate = new Date();
-    startDate.setHours(0, 0, 0, 0);
-
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
     const months = [];
-    for (let i = 0; i <= targetMonths; i++) {
-      const d = new Date(startDate.getFullYear(), startDate.getMonth() + i, 1);
+    for (let i = 0; i <= CAL_MOVES_HORIZON_MONTHS; i++) {
+      const d = new Date(start.getFullYear(), start.getMonth() + i, 1);
       months.push({ y: d.getFullYear(), m0: d.getMonth() });
     }
 
     const all = [];
     let idx = 0;
-    const workers = Math.min(2, months.length);
+    const workers = Math.min(4, months.length);
 
     async function worker() {
       while (idx < months.length) {
@@ -2609,8 +2615,6 @@ async function ensureMovesHorizonLoaded_(opts = {}) {
           const part = await fetchCalendarMovesForMonth_(cur.y, cur.m0);
           if (Array.isArray(part) && part.length) all.push(...part);
         } catch (_) {}
-        // lascia respirare WebKit
-        try { await yieldToMain_(0); } catch (_) {}
       }
     }
 
@@ -2638,7 +2642,6 @@ async function ensureMovesHorizonLoaded_(opts = {}) {
 
     calMovesMaxTsByPatient = maxByPid;
     calMovesHorizonLoadedAt = Date.now();
-    calMovesHorizonLoadedMonths = targetMonths;
     calMovesHorizonLoading = false;
 
     // aggiorna card pazienti quando arriva la scadenza reale da calendario
@@ -2710,52 +2713,42 @@ async function ensurePatientsForCalendar() {
 
   async function openCalendarFlow() {
     postLoginTarget = "calendar";
+    const ok = await ensureApiReady();
+    if (!ok) return;
+
+    let users = [];
+    try { users = await fetchUsers(); } catch { users = []; }
 
     const session = getSession();
-    // Apertura istantanea: mostra subito auth o calendario
-    if (session && session.id) showView("calendar");
-    else showView("auth");
 
-    // Setup + caricamento dati in background
-    runInBackground_(() => {
-      (async () => {
-        const ok = await ensureApiReady();
-        if (!ok) return;
+    if (!users.length) {
+      showView("create");
+      toast("Crea il primo account");
+      return;
+    }
 
-        let users = [];
-        try { users = await fetchUsers(); } catch { users = []; }
+    if (!session || !session.id) {
+      showView("auth");
+      return;
+    }
 
-        if (!users.length) {
-          showView("create");
-          toast("Crea il primo account");
-          return;
-        }
+    ensureCalendarBuilt();
+    const now = new Date();
+    calSelectedDate = now;
 
-        const s = getSession();
-        if (!s || !s.id) {
-          showView("auth");
-          return;
-        }
+    // Apertura pagina immediata
+    showView("calendar");
 
-        const now = new Date();
-        calSelectedDate = now;
+    // Warmup dati in background (no blocchi UI)
+    try { warmupCoreData(); } catch (_) {}
 
-        // Costruisci griglia senza bloccare il paint iniziale
-        await yieldToMain_(0);
-        await ensureCalendarBuilt();
+    // Aggiorna UI senza bloccare la navigazione
+    updateCalendarUI()
+      .then(() => { try { focusCalendarNow(); } catch (_) {} })
+      .catch(() => {});
 
-        // Warmup dati core in background
-        try { warmupCoreData(); } catch (_) {}
-
-        // Aggiorna UI (chunked + yield)
-        try {
-          await updateCalendarUI();
-        } catch (_) {}
-
-        try { focusCalendarNow(); } catch (_) {}
-        try { setTimeout(() => { try { focusCalendarNow(); } catch (_) {} }, 80); } catch (_) {}
-      })().catch(() => {});
-    });
+    // Focus rapido (anche prima del caricamento dati)
+    try { setTimeout(() => { try { focusCalendarNow(); } catch (_) {} }, 80); } catch (_) {}
   }
 
 
@@ -2838,12 +2831,9 @@ async function ensurePatientsForCalendar() {
   requestAnimationFrame(() => { try { doScroll(); } catch (_) {} });
 }
 
-  async function ensureCalendarBuilt() {
+  function ensureCalendarBuilt() {
   if (calBuilt) return;
   if (!calDaysCol || !calHoursRow || !calBody || !calScroll || !calDaysScroll || !calHoursScroll) return;
-
-  try { calCellMap = calCellMap && calCellMap.clear ? calCellMap : new Map(); calCellMap.clear(); } catch (_) { calCellMap = new Map(); }
-  try { calDirtyKeys = calDirtyKeys && calDirtyKeys.clear ? calDirtyKeys : new Set(); calDirtyKeys.clear(); } catch (_) { calDirtyKeys = new Set(); }
 
   // --- Header: days 1..31 (lettera giorno + numero)
   calDaysCol.innerHTML = "";
@@ -2891,7 +2881,6 @@ async function ensurePatientsForCalendar() {
   calBody.innerHTML = "";
   const frag = document.createDocumentFragment();
 
-  let created = 0;
   for (let r = 0; r < calHours.length; r++) {
     const t = calHours[r];
     for (let d = 1; d <= 31; d++) {
@@ -2899,10 +2888,6 @@ async function ensurePatientsForCalendar() {
       cell.className = "cal-cell";
       cell.dataset.day = String(d);
       cell.dataset.time = t;
-
-      // Cell index (fast paint)
-      try { calCellMap.set(`${d}|${t}`, cell); } catch (_) {}
-
       const c = calColorForDay(d);
       cell.style.backgroundColor = rgba(c, 0.25);
 
@@ -3234,9 +3219,6 @@ async function ensurePatientsForCalendar() {
       });
 
 frag.appendChild(cell);
-      created++;
-      if ((created % 120) === 0) { try { await yieldToMain_(0); } catch (_) {} }
-
     }
   }
   calBody.appendChild(frag);
@@ -3343,10 +3325,10 @@ function formatItMonth(dateObj) {
     const d = parseInt(el.dataset.day || "0", 10);
     const valid = d >= 1 && d <= daysInThisMonth;
 
+    // Aggiorna lettera del giorno (L M M G V S D) + numero
     const dowEl = el.querySelector(".cal-dow");
     const domEl = el.querySelector(".cal-dom");
-    if (domEl) domEl.textContent = String(d);
-
+    if (domEl) domEl.textContent = valid ? String(d) : String(d);
     if (dowEl) {
       if (valid) {
         const map = ["D","L","M","M","G","V","S"]; // JS: 0=Dom ... 6=Sab
@@ -3361,34 +3343,17 @@ function formatItMonth(dateObj) {
     el.classList.toggle("active", valid && d === calSelectedDate.getDate());
   });
 
-  // Disabilita celle extra (31->28/29/30). Loop leggero, ma yield dopo.
   calBody.querySelectorAll(".cal-cell").forEach((cell) => {
     const d = parseInt(cell.dataset.day || "0", 10);
     const valid = d >= 1 && d <= daysInThisMonth;
     cell.classList.toggle("disabled", !valid);
   });
 
-  await yieldToMain_(0);
-
   clearCalendarCells();
-  await yieldToMain_(0);
-
-  // Carica dati in parallelo (no blocchi percepiti)
-  const patientsP = ensurePatientsForCalendar().catch(() => []);
-  const socP = loadSocietaCache().catch(() => []);
-  const patients = await patientsP;
-  await socP;
-
-  await yieldToMain_(0);
-
+  await loadSocietaCache();
+  const patients = await ensurePatientsForCalendar();
   const baseSlots = buildCalendarSlotsFromPatients(patients);
-
-  await yieldToMain_(0);
-
   const effectiveSlots = await applyCalendarMoves_(baseSlots, patients);
-
-  await yieldToMain_(0);
-
   paintCalendarSlots(effectiveSlots);
 }
 
@@ -3439,7 +3404,7 @@ function formatItMonth(dateObj) {
   // --- Users cache
   let usersCache = null;
   async function fetchUsers() {
-    const data = await apiCached("listUsers", {}, 60000);
+    const data = await apiCached("listUsers", {}, 15000);
     usersCache = Array.isArray(data.users) ? data.users : [];
     return usersCache;
   }
@@ -3602,36 +3567,22 @@ function formatItMonth(dateObj) {
 
   async function openSettingsAfterLogin() {
     showView("settings");
-    // Carica impostazioni in background per apertura istantanea
-    runInBackground_(() => {
-      (async () => {
-        try {
-          await yieldToMain_(0);
-          await loadSettings();
-        } catch (e) {
-          setPills(getSession(), "");
-          toast("Impostazioni non disponibili");
-        }
-      })().catch(() => {});
-    });
+    try {
+      await loadSettings();
+    } catch (e) {
+      setPills(getSession(), "");
+      toast("Impostazioni non disponibili");
+    }
   }
 
   async function openPatientsAfterLogin() {
     showView("patients");
-    // Carica liste in background per apertura istantanea
-    runInBackground_(() => {
-      (async () => {
-        try {
-          await yieldToMain_(0);
-          await Promise.all([
-            loadSocietaCache().catch(() => []),
-            loadPatients().catch(() => {})
-          ]);
-        } catch (e) {
-          toast("Pazienti non disponibili");
-        }
-      })().catch(() => {});
-    });
+    try {
+      await loadSocietaCache();
+      await loadPatients();
+    } catch (e) {
+      toast("Pazienti non disponibili");
+    }
   }
 
   async function goAfterLogin() {
@@ -3644,70 +3595,52 @@ function formatItMonth(dateObj) {
 
   async function openPatientsFlow() {
     postLoginTarget = "patients";
+    const ok = await ensureApiReady();
+    if (!ok) return;
 
-    // Apertura immediata in base alla sessione locale
+    let users = [];
+    try { users = await fetchUsers(); } catch { users = []; }
+
     const session = getSession();
-    if (session && session.id) showView("patients");
-    else showView("auth");
 
-    // Verifiche + dati in background (no blocchi UI)
-    runInBackground_(() => {
-      (async () => {
-        const ok = await ensureApiReady();
-        if (!ok) return;
+    if (!users.length) {
+      showView("create");
+      toast("Crea il primo account");
+      return;
+    }
 
-        let users = [];
-        try { users = await fetchUsers(); } catch { users = []; }
-
-        if (!users.length) {
-          showView("create");
-          toast("Crea il primo account");
-          return;
-        }
-
-        const s = getSession();
-        if (s && s.id) {
-          await openPatientsAfterLogin();
-        } else {
-          showView("auth");
-        }
-      })().catch(() => {});
-    });
+    if (session && session.id) {
+      await openPatientsAfterLogin();
+    } else {
+      showView("auth");
+    }
   }
 
 
 
   async function openSettingsFlow() {
     postLoginTarget = "settings";
+    const ok = await ensureApiReady();
+    if (!ok) return;
 
-    // Apertura immediata in base alla sessione locale
+    let users = [];
+    try { users = await fetchUsers(); } catch { users = []; }
+
     const session = getSession();
-    if (session && session.id) showView("settings");
-    else showView("auth");
 
-    // Verifiche + dati in background (no blocchi UI)
-    runInBackground_(() => {
-      (async () => {
-        const ok = await ensureApiReady();
-        if (!ok) return;
+    // se nessun utente -> forza crea account
+    if (!users.length) {
+      showView("create");
+      toast("Crea il primo account");
+      return;
+    }
 
-        let users = [];
-        try { users = await fetchUsers(); } catch { users = []; }
-
-        if (!users.length) {
-          showView("create");
-          toast("Crea il primo account");
-          return;
-        }
-
-        const s = getSession();
-        if (s && s.id) {
-          await goAfterLogin();
-        } else {
-          showView("auth");
-        }
-      })().catch(() => {});
-    });
+    // se già loggato -> settings, altrimenti auth
+    if (session && session.id) {
+      await goAfterLogin();
+    } else {
+      showView("auth");
+    }
   }
 
   // --- Pazienti (UI + API)
@@ -3981,27 +3914,15 @@ function formatItMonth(dateObj) {
   btnSortSoc?.addEventListener("click", () => setPatientsSort("soc"));
   btnSortToday?.addEventListener("click", () => setPatientsSort("today"));
 
-  
-  function scheduleMovesHorizonWarmup_() {
-    try {
-      const user = getSession();
-      if (!user || !user.id) return;
-
-      // Warmup rapido (2 mesi) per UI veloce; horizon completo solo in idle
-      runInBackground_(() => { try { ensureMovesHorizonLoaded_({ monthsAhead: 2, silent: true }); } catch (_) {} });
-      runInIdle_(() => { try { ensureMovesHorizonLoaded_({ monthsAhead: CAL_MOVES_HORIZON_MONTHS, silent: true }); } catch (_) {} }, 8000);
-    } catch (_) {}
-  }
-
-async function loadPatients(opts = {}) {
+  async function loadPatients(opts = {}) {
     const { render = true } = (opts || {});
     const user = getSession();
     if (!user) return;
     try {
-      const data = await apiCached("listPatients", { userId: user.id }, 30000);
+      const data = await apiCached("listPatients", { userId: user.id }, 8000);
       patientsCache = Array.isArray(data.pazienti) ? data.pazienti : [];
       patientsLoaded = true;
-      try { scheduleMovesHorizonWarmup_(); } catch (_) {}
+      try { ensureMovesHorizonLoaded_({ silent: true }); } catch (_) {}
       patientsLoadedForUserId = user.id || null;
       if (render) renderPatients();
     } catch (err) {
@@ -5313,7 +5234,7 @@ async function renderSocietaDeleteList() {
 
     let data = null;
     try {
-      data = await apiCached("listSocieta", { userId: user.id }, 60000);
+      data = await apiCached("listSocieta", { userId: user.id }, 15000);
     } catch (err) {
       if (apiHintIfUnknownAction(err)) return;
       toast(String(err && err.message ? err.message : "Errore"));
@@ -5626,7 +5547,7 @@ async function renderSocietaDeleteList() {
   // PWA (iOS): registra Service Worker
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {
-      navigator.serviceWorker.register("./service-worker.js?v=1.111").catch(() => {});
+      navigator.serviceWorker.register("./service-worker.js?v=1.110").catch(() => {});
     });
   }
 })();
