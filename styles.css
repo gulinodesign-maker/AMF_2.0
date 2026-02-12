@@ -1,4 +1,4 @@
-/* AMF_1.111 */
+/* AMF_1.110 */
 /* Montalto PMS - PWA iOS / GitHub Pages */
 :root{
   --text: #1b1f23;
@@ -1184,17 +1184,17 @@ select.field{ appearance: none; }
   --cal-gap: 2px;
 }
 .calendar-wrap{
-  padding: 18px 2px 22px;
-  margin: 0;
+  padding: 18px 3px 22px;
+  margin: 0 -15px;
   display:flex;
   flex-direction: column;
   height: 100%;
-  overflow: visible;
+  overflow: hidden;
 }
 
 #viewCalendar{
   width: 100%;
-  overflow: visible;
+  overflow: hidden;
   height: calc(100vh - 72px - 26px - 22px);
   height: calc(100svh - 72px - 26px - 22px);
 }
@@ -1202,7 +1202,6 @@ select.field{ appearance: none; }
 #viewCalendar .calendar-grid{
   flex: 1;
   min-height: 0;
-  overflow: hidden;
 }
 .calendar-date{
   font-size: 26px;
@@ -1283,7 +1282,7 @@ select.field{ appearance: none; }
   grid-auto-flow: column;
   grid-auto-columns: var(--cal-cell-w);
   gap: 2px;
-  padding: 2px 0;
+  padding: 2px 3px;
 }
 
 /* First column: hours 07:30..21:00 (vertical scroll only) */
@@ -1299,7 +1298,7 @@ select.field{ appearance: none; }
   grid-auto-flow: row;
   grid-auto-rows: var(--cal-cell-h);
   gap: 2px;
-  padding: 2px 0;
+  padding: 2px 3px;
 }
 
 /* Body: scroll both axes, synced with header/left column */
@@ -1314,7 +1313,7 @@ select.field{ appearance: none; }
   grid-template-columns: repeat(31, var(--cal-cell-w));
   grid-auto-rows: var(--cal-cell-h);
   gap: 2px;
-  padding: 2px 0;
+  padding: 2px 3px;
 }
 
 .cal-day,
