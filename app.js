@@ -1,9 +1,14 @@
-/* AMF_1.115 */
+/* AMF_1.116 */
 (() => {
-    const BUILD = "AMF_1.115";
-    const DISPLAY = "1.115";
+    const BUILD = "AMF_1.116";
+    const DISPLAY = "1.116";
 
-  // --- Helpers
+  
+  // iOS: prevent unwanted text selection / callout during long-press gestures
+  const __noSelectOn = () => { try { document.documentElement.classList.add("no-select"); document.body.classList.add("no-select"); } catch(_){} };
+  const __noSelectOff = () => { try { document.documentElement.classList.remove("no-select"); document.body.classList.remove("no-select"); } catch(_){} };
+
+// --- Helpers
   const $ = (sel) => document.querySelector(sel);
 
   const toastEl = $("#toast");
@@ -3020,7 +3025,7 @@ async function ensurePatientsForCalendar() {
       let lpTimer = null;
       let lpFired = false;
 
-      const clearLP = () => { if (lpTimer) { clearTimeout(lpTimer); lpTimer = null; } };
+      const clearLP = () => { if (lpTimer) { clearTimeout(lpTimer); lpTimer = null; } __noSelectOff(); };
 
       const endDragCleanup = () => {
         try { document.body.classList.remove("cal-dragging"); } catch (_) {}
@@ -3142,8 +3147,9 @@ async function ensurePatientsForCalendar() {
       let lpStartY = 0;
 
       const lpStart = (ev) => {
-        // Non avviare drag su celle vuote o disabilitate
+        // Non avviare su celle disabilitate
         if (cell.classList.contains("disabled")) return;
+        __noSelectOn();
 
         lpFired = false;
         clearLP();
@@ -3210,10 +3216,10 @@ async function ensurePatientsForCalendar() {
       });
 
       // iOS fallback: touch events (alcune versioni Safari non dispatchano pointer events in modo affidabile)
-      cell.addEventListener("touchstart", lpStart, { passive: true });
-      cell.addEventListener("touchmove", lpMove, { passive: true });
-      cell.addEventListener("touchend", clearLP, { passive: true });
-      cell.addEventListener("touchcancel", clearLP, { passive: true });
+      cell.addEventListener("touchstart", lpStart, { passive: false });
+      cell.addEventListener("touchmove", lpMove, { passive: false });
+      cell.addEventListener("touchend", clearLP, { passive: false });
+      cell.addEventListener("touchcancel", clearLP, { passive: false });
 
 frag.appendChild(cell);
     }
@@ -4169,6 +4175,7 @@ function formatItMonth(dateObj) {
       btnPick.toggleAttribute("disabled", !patientEditEnabled);
     }
     try { renderTherapiesUI_(); } catch (_) {}
+    try { if (patientEditEnabled) { setTimeout(__forceEnableTherapyControls_, 0); setTimeout(__forceEnableTherapyControls_, 200); } } catch (_) {}
 
         $("#btnPatSave")?.toggleAttribute("disabled", !patientEditEnabled);
     if (!patientEditEnabled) $("#btnPatSave")?.classList.add("pill-gray");
@@ -4884,7 +4891,7 @@ levelRow.querySelectorAll(".therapy-level-btn").forEach((b) => {
         let lpTimer = null;
         let lpFired = false;
 
-        const clearLP = () => { if (lpTimer) { clearTimeout(lpTimer); lpTimer = null; } };
+        const clearLP = () => { if (lpTimer) { clearTimeout(lpTimer); lpTimer = null; } __noSelectOff(); };
 
         const LP_DELAY_MS = 500;
         const LP_MOVE_PX = 10;
@@ -4893,6 +4900,7 @@ levelRow.querySelectorAll(".therapy-level-btn").forEach((b) => {
 
         const lpStart = (ev) => {
           if (!patientEditEnabled) return;
+          __noSelectOn();
           lpFired = false;
           clearLP();
 
@@ -4933,10 +4941,10 @@ levelRow.querySelectorAll(".therapy-level-btn").forEach((b) => {
         btn.addEventListener("pointerleave", clearLP);
 
         // iOS fallback
-        btn.addEventListener("touchstart", lpStart, { passive: true });
-        btn.addEventListener("touchmove", lpMove, { passive: true });
-        btn.addEventListener("touchend", clearLP, { passive: true });
-        btn.addEventListener("touchcancel", clearLP, { passive: true });
+        btn.addEventListener("touchstart", lpStart, { passive: false });
+        btn.addEventListener("touchmove", lpMove, { passive: false });
+        btn.addEventListener("touchend", clearLP, { passive: false });
+        btn.addEventListener("touchcancel", clearLP, { passive: false });
 
         btn.addEventListener("click", (e) => {
           if (lpFired) {
@@ -4980,7 +4988,21 @@ levelRow.querySelectorAll(".therapy-level-btn").forEach((b) => {
     }
   }
 
-  btnAddTherapy?.addEventListener("click", () => {
+  
+  function __forceEnableTherapyControls_() {
+    try {
+      const wrap = therapiesWrap;
+      if (!wrap) return;
+      wrap.querySelectorAll(".row-days .day-btn, .therapy-level-btn, input[type=date]").forEach((el) => {
+        if (!el) return;
+        el.removeAttribute("disabled");
+        el.disabled = false;
+        el.style.pointerEvents = "";
+      });
+    } catch (_) {}
+  }
+
+btnAddTherapy?.addEventListener("click", () => {
     if (!patientEditEnabled) return;
     ensureCurrentTherapies_();
     currentPatient.terapie_arr.push(normalizeTherapy_({}));
