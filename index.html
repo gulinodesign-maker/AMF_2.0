@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Montalto PMS</title>
-  <link rel="stylesheet" href="./styles.css?v=1.111" />
+  <link rel="stylesheet" href="./styles.css?v=1.114" />
   <link rel="manifest" href="./manifest.json" />
   <meta name="theme-color" content="#2a74b8" />
   <link rel="apple-touch-icon" href="./assets/apple-touch-icon.png" />
@@ -83,7 +83,7 @@
       </section>
         </div>
         <div class="home-footer" aria-label="Build">
-          <div class="build" id="buildLabel">1.110</div>
+          <div class="build" id="buildLabel">1.114</div>
         </div>
       </div>
     </section>
@@ -331,7 +331,28 @@
         <div class="modal-title">Ora inizio</div>
         <div class="list" id="timePickList" aria-label="Elenco orari"></div>
       </div>
+    
+    <!-- MODAL: Sposta prenotazione -->
+    <div class="modal" id="modalMoveSession" aria-hidden="true">
+      <div class="modal-card">
+        <button class="dot-close" id="btnMoveSessionClose" aria-label="Chiudi"></button>
+        <div class="modal-title">Sposta prenotazione</div>
+
+        <div class="form" style="padding-top:10px;">
+          <div class="row2">
+            <input class="field" id="moveSessionDate" type="date" inputmode="numeric" aria-label="Data destinazione" />
+            <input class="field" id="moveSessionTime" type="time" inputmode="numeric" aria-label="Ora destinazione" />
+          </div>
+        </div>
+
+        <div class="stack" style="padding-top:10px;">
+          <button class="pill-btn pill-blue" id="btnMoveSessionOk" type="button" aria-label="Conferma spostamento">Conferma</button>
+          <button class="pill-btn" id="btnMoveSessionCancel" type="button" aria-label="Annulla spostamento">Annulla</button>
+        </div>
+      </div>
     </div>
+
+</div>
 
     
     <!-- MODAL: Errore terapia -->
@@ -471,6 +492,6 @@
     </div>
 
   <script src="./config.js"></script>
-  <script src="./app.js?v=1.111"></script>
+  <script src="./app.js?v=1.114"></script>
 </body>
 </html>

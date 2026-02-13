@@ -1,7 +1,7 @@
-/* AMF_1.111 */
+/* AMF_1.114 */
 (() => {
-    const BUILD = "AMF_1.111";
-    const DISPLAY = "1.111";
+    const BUILD = "AMF_1.114";
+    const DISPLAY = "1.114";
 
   // --- Helpers
   const $ = (sel) => document.querySelector(sel);
@@ -3159,52 +3159,25 @@ async function ensurePatientsForCalendar() {
 
           const pid = ids[0];
 
-          // start drag
+          // open move popup (0.5s long-press)
           try { cell.dataset.suppressClick = "1"; } catch (_) {}
 
-          calDragState = {
-            dragging: true,
-            source: cell,
-            target: null,
-            pid,
-            fromDay: String(cell.dataset.day || ""),
-            fromTime: String(cell.dataset.time || ""),
-            ghost: null,
-            ghostOffsetX: 0,
-            ghostOffsetY: 0
-          };
-
-          try { document.body.classList.add("cal-dragging"); } catch (_) {}
-          try { cell.classList.add("drag-source"); } catch (_) {}
-
-          // ghost
           try {
-            const r = cell.getBoundingClientRect();
-            const g = document.createElement("div");
-            g.className = "cal-drag-ghost";
-            g.style.position = "fixed";
-            g.style.left = "0px";
-            g.style.top = "0px";
-            g.style.width = `${Math.max(10, r.width)}px`;
-            g.style.height = `${Math.max(10, r.height)}px`;
-            g.style.zIndex = "9999";
-            g.style.pointerEvents = "none";
-            g.style.borderRadius = "10px";
-            g.style.background = "rgba(255,255,255,0.8)";
-            g.style.outline = "2px solid rgba(0,160,255,0.9)";
-            g.style.transform = `translate(${startX}px, ${startY}px)`;
-            document.body.appendChild(g);
-            calDragState.ghost = g;
-            calDragState.ghostOffsetX = Math.min(r.width / 2, 18);
-            calDragState.ghostOffsetY = Math.min(r.height / 2, 18);
-          } catch (_) {}
+            const year = calSelectedDate.getFullYear();
+            const month = calSelectedDate.getMonth();
+            const fromDayNum = parseInt(cell.dataset.day || "0", 10);
+            const fromTime2 = String(cell.dataset.time || "");
+            const fromDate2 = ymdLocal(new Date(year, month, fromDayNum));
 
-          try { document.addEventListener("pointermove", onDragMove, { passive: false }); } catch (_) {}
-          try { document.addEventListener("pointerup", onDragEnd, { passive: false }); } catch (_) {}
-          try { document.addEventListener("pointercancel", onDragEnd, { passive: false }); } catch (_) {}
-
-          try { cell.setPointerCapture(pointerId); } catch (_) {}
-        }, 500);
+            openMoveSessionModal_({
+              pid,
+              fromDate: fromDate2,
+              fromTime: fromTime2
+            });
+          } catch (err) {
+            toast("Errore apertura spostamento");
+          }
+}, 500);
       });
 
       cell.addEventListener("pointerup", (ev) => {
@@ -4185,7 +4158,11 @@ function formatItMonth(dateObj) {
       else btnDel.setAttribute("hidden", "");
       btnDel.setAttribute("aria-label", patientEditEnabled ? "Chiudi" : "Elimina paziente");
     }
-  }
+  
+
+    // Refresh terapie UI (abilita/disabilita correttamente dopo toggle modifica)
+    try { renderTherapiesUI_(); } catch (_) {}
+}
 
   
 
@@ -4313,6 +4290,16 @@ function formatItMonth(dateObj) {
   const modalPickTime = $("#modalPickTime");
   const timePickList = $("#timePickList");
   const btnPickTimeClose = $("#btnPickTimeClose");
+  // ---- Move session modal (calendar long-press)
+  const modalMoveSession = $("#modalMoveSession");
+  const btnMoveSessionClose = $("#btnMoveSessionClose");
+  const btnMoveSessionOk = $("#btnMoveSessionOk");
+  const btnMoveSessionCancel = $("#btnMoveSessionCancel");
+  const moveSessionDate = $("#moveSessionDate");
+  const moveSessionTime = $("#moveSessionTime");
+  let pendingMoveSession = null;
+
+
 
   // ---- Modal errore terapia (no sovrapposizioni)
   const modalTherapyError = $("#modalTherapyError");
@@ -4413,6 +4400,97 @@ function formatItMonth(dateObj) {
   }
   btnPickTimeClose?.addEventListener("click", closePickTimeModal);
   modalPickTime?.addEventListener("click", (e) => { if (e.target === modalPickTime) closePickTimeModal(); });
+
+
+  function openMoveSessionModal_(ctx) {
+    if (!modalMoveSession) return;
+    pendingMoveSession = ctx || null;
+
+    // Prefill: data e ora attuali dello slot
+    try {
+      if (moveSessionDate && ctx && ctx.fromDate) moveSessionDate.value = String(ctx.fromDate || "");
+    } catch (_) {}
+    try {
+      if (moveSessionTime && ctx && ctx.fromTime) moveSessionTime.value = normTime(ctx.fromTime);
+    } catch (_) {}
+
+    modalMoveSession.classList.add("show");
+    modalMoveSession.setAttribute("aria-hidden", "false");
+  }
+  function closeMoveSessionModal_() {
+    if (!modalMoveSession) return;
+    modalMoveSession.classList.remove("show");
+    modalMoveSession.setAttribute("aria-hidden", "true");
+    pendingMoveSession = null;
+  }
+
+  btnMoveSessionClose?.addEventListener("click", closeMoveSessionModal_);
+  btnMoveSessionCancel?.addEventListener("click", closeMoveSessionModal_);
+  modalMoveSession?.addEventListener("click", (e) => { if (e.target === modalMoveSession) closeMoveSessionModal_(); });
+
+  btnMoveSessionOk?.addEventListener("click", async () => {
+    if (!pendingMoveSession) { closeMoveSessionModal_(); return; }
+    const ctx = pendingMoveSession;
+
+    const toDate = String(moveSessionDate && moveSessionDate.value ? moveSessionDate.value : "").trim();
+    const toTime = normTime(moveSessionTime && moveSessionTime.value ? moveSessionTime.value : "");
+
+    if (!toDate || !toTime) { toast("Inserisci data e ora"); return; }
+
+    // Se la data è nel mese visualizzato, valida slot destinazione vuoto
+    try {
+      const y = calSelectedDate.getFullYear();
+      const m = calSelectedDate.getMonth();
+      const dt = new Date(toDate + "T00:00:00");
+      if (!isNaN(dt) && dt.getFullYear() === y && dt.getMonth() === m) {
+        const toDay = dt.getDate();
+        const k2 = `${toDay}|${toTime}`;
+        const info2 = calSlotPatients && calSlotPatients.get ? calSlotPatients.get(k2) : null;
+        if (info2 && info2.count) { toast("Slot occupato"); return; }
+      }
+    } catch (_) {}
+
+    try {
+      const user = getSession();
+      if (!user || !user.id) { toast("Devi accedere"); return; }
+      const ok = await ensureApiReady();
+      if (!ok) return;
+
+      // Da: mese visualizzato + giorno/ora
+      const fromDate = String(ctx.fromDate || "");
+      const fromTime = String(ctx.fromTime || "");
+      const pid = ctx.pid;
+
+      const effFrom = resolveOriginalSlotForPid_(pid, fromDate, fromTime);
+      const terapiaId = getTherapyIdForPatientAtDate_(pid, effFrom.from_date || fromDate);
+
+      await api("moveSession", {
+        userId: user.id,
+        paziente_id: String(pid),
+        terapia_id: terapiaId,
+        from_date: fromDate,
+        from_time: normTime(fromTime),
+        to_date: toDate,
+        to_time: toTime
+      });
+
+      invalidateStatsMovesCache_();
+      toast("Spostato");
+      closeMoveSessionModal_();
+
+      await updateCalendarUI();
+      try {
+        await loadPatients({ render: false });
+        if (currentView === "pazienti") renderPatients();
+        if (currentView === "stats") await renderStatsTable_();
+      } catch (_) {}
+    } catch (err) {
+      if (apiHintIfUnknownAction(err)) return;
+      toast(String(err && err.message ? err.message : "Errore spostamento"));
+    }
+  });
+
+
 
   const therapiesWrap = $("#therapiesWrap");
   const btnAddTherapy = $("#btnAddTherapy");
