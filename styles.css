@@ -1,4 +1,4 @@
-/* AMF_1.112 */
+/* AMF_1.111 */
 /* Montalto PMS - PWA iOS / GitHub Pages */
 :root{
   --text: #1b1f23;
@@ -777,14 +777,6 @@ select.field{ appearance: none; }
   padding-bottom: 6px;
 }
 
-
-#timePickList .pill-btn{
-  height: 116px;
-  min-height: 116px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-}
 .patient-row{
   width: 100%;
   border-radius: 18px;
@@ -2035,9 +2027,6 @@ select.field{ appearance: none; }
 
 /* Drag & drop sedute (Calendario) */
 body.cal-dragging { touch-action: none; }
-body.cal-dragging #calScroll{ touch-action: none; overscroll-behavior: none; }
-body.cal-dragging #calBody{ touch-action: none; }
-
 .cal-cell.drag-source { outline: 2px solid rgba(0,160,255,0.9); outline-offset: -2px; }
 .cal-cell.drop-target { outline: 3px solid rgba(0,160,255,0.9); outline-offset: -3px; }
 .cal-drag-ghost{

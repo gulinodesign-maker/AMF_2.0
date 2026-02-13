@@ -1,7 +1,7 @@
-/* AMF_1.112 */
+/* AMF_1.111 */
 (() => {
-    const BUILD = "AMF_1.112";
-    const DISPLAY = "1.112";
+    const BUILD = "AMF_1.111";
+    const DISPLAY = "1.111";
 
   // --- Helpers
   const $ = (sel) => document.querySelector(sel);
@@ -3020,29 +3020,6 @@ async function ensurePatientsForCalendar() {
       let lpTimer = null;
       let lpFired = false;
 
-      // Android (Chrome): blocca il pan/scroll del contenitore durante long-press/drag
-      let panLocked = false;
-      let prevCellTouchAction = "";
-      let prevScrollTouchAction = "";
-
-      const lockPan = () => {
-        if (panLocked) return;
-        panLocked = true;
-        try { prevCellTouchAction = cell.style.touchAction || ""; cell.style.touchAction = "none"; } catch (_) {}
-        try { if (calScroll) { prevScrollTouchAction = calScroll.style.touchAction || ""; calScroll.style.touchAction = "none"; } } catch (_) {}
-      };
-      const unlockPan = () => {
-        if (!panLocked) return;
-        panLocked = false;
-        try { cell.style.touchAction = prevCellTouchAction || ""; } catch (_) {}
-        try { if (calScroll) calScroll.style.touchAction = prevScrollTouchAction || ""; } catch (_) {}
-      };
-
-      const onDragTouchMove = (ev) => {
-        if (!calDragState || !calDragState.dragging) return;
-        try { ev.preventDefault(); } catch (_) {}
-      };
-
       const clearLP = () => { if (lpTimer) { clearTimeout(lpTimer); lpTimer = null; } };
 
       const endDragCleanup = () => {
@@ -3055,8 +3032,6 @@ async function ensurePatientsForCalendar() {
         try { document.removeEventListener("pointermove", onDragMove); } catch (_) {}
         try { document.removeEventListener("pointerup", onDragEnd); } catch (_) {}
         try { document.removeEventListener("pointercancel", onDragEnd); } catch (_) {}
-        try { document.removeEventListener("touchmove", onDragTouchMove); } catch (_) {}
-        try { unlockPan(); } catch (_) {}
         calDragState = null;
       };
 
@@ -3165,14 +3140,6 @@ async function ensurePatientsForCalendar() {
         // Non avviare drag su celle vuote o disabilitate
         if (cell.classList.contains("disabled")) return;
 
-        // Avvia long-press solo su slot occupati (su Android evita pan/scroll della griglia durante drag)
-        const slotKey0 = `${cell.dataset.day}|${cell.dataset.time}`;
-        const info0 = calSlotPatients && calSlotPatients.get ? calSlotPatients.get(slotKey0) : null;
-        const ids0 = info0 && Array.isArray(info0.ids) ? info0.ids.filter((x) => x != null) : [];
-        if (!ids0.length) return;
-
-        try { lockPan(); } catch (_) {}
-
         lpFired = false;
         clearLP();
 
@@ -3233,7 +3200,6 @@ async function ensurePatientsForCalendar() {
           } catch (_) {}
 
           try { document.addEventListener("pointermove", onDragMove, { passive: false }); } catch (_) {}
-          try { document.addEventListener("touchmove", onDragTouchMove, { passive: false }); } catch (_) {}
           try { document.addEventListener("pointerup", onDragEnd, { passive: false }); } catch (_) {}
           try { document.addEventListener("pointercancel", onDragEnd, { passive: false }); } catch (_) {}
 
@@ -3243,7 +3209,6 @@ async function ensurePatientsForCalendar() {
 
       cell.addEventListener("pointerup", (ev) => {
         clearLP();
-        if (!lpFired) { try { unlockPan(); } catch (_) {} }
       });
       cell.addEventListener("pointercancel", (ev) => {
         clearLP();
@@ -3251,7 +3216,6 @@ async function ensurePatientsForCalendar() {
       });
       cell.addEventListener("pointerleave", (ev) => {
         clearLP();
-        if (!lpFired) { try { unlockPan(); } catch (_) {} }
       });
 
 frag.appendChild(cell);
@@ -4617,7 +4581,7 @@ function formatItMonth(dateObj) {
 
   function buildTimes() {
     const times = ["—"];
-    for (let h=7; h<=21; h++) {
+    for (let h=6; h<=21; h++) {
       times.push(String(h).padStart(2,"0")+":00");
       times.push(String(h).padStart(2,"0")+":30");
     }
