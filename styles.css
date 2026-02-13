@@ -1,4 +1,4 @@
-/* AMF_1.114 */
+/* AMF_1.115 */
 /* Montalto PMS - PWA iOS / GitHub Pages */
 :root{
   --text: #1b1f23;
@@ -2053,4 +2053,24 @@ body.cal-dragging { touch-action: none; }
 #viewCalendar .cal-hours-scroll,
 #viewCalendar .cal-body-scroll{
   height: 100%;
+}
+
+/* --- iOS: evita selezione testo su long-press (calendario + terapie) --- */
+.cal-cell,
+.day-btn,
+.pill-btn,
+.circle-btn,
+.topbar button,
+button{
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.cal-cell,
+.day-btn,
+.pill-btn,
+.circle-btn,
+.topbar button{
+  touch-action: manipulation;
 }

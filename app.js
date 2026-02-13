@@ -1,7 +1,7 @@
-/* AMF_1.114 */
+/* AMF_1.115 */
 (() => {
-    const BUILD = "AMF_1.114";
-    const DISPLAY = "1.114";
+    const BUILD = "AMF_1.115";
+    const DISPLAY = "1.115";
 
   // --- Helpers
   const $ = (sel) => document.querySelector(sel);
@@ -3136,16 +3136,21 @@ async function ensurePatientsForCalendar() {
         }
       };
 
-      cell.addEventListener("pointerdown", (ev) => {
+      const LP_DELAY_MS = 500;
+      const LP_MOVE_PX = 10;
+      let lpStartX = 0;
+      let lpStartY = 0;
+
+      const lpStart = (ev) => {
         // Non avviare drag su celle vuote o disabilitate
         if (cell.classList.contains("disabled")) return;
 
         lpFired = false;
         clearLP();
 
-        const startX = ev.clientX;
-        const startY = ev.clientY;
-        const pointerId = ev.pointerId;
+        const pt = (ev && ev.touches && ev.touches[0]) ? ev.touches[0] : ev;
+        lpStartX = (pt && pt.clientX != null) ? pt.clientX : 0;
+        lpStartY = (pt && pt.clientY != null) ? pt.clientY : 0;
 
         lpTimer = setTimeout(() => {
           lpFired = true;
@@ -3177,8 +3182,21 @@ async function ensurePatientsForCalendar() {
           } catch (err) {
             toast("Errore apertura spostamento");
           }
-}, 500);
-      });
+        }, LP_DELAY_MS);
+      };
+
+      const lpMove = (ev) => {
+        if (!lpTimer) return;
+        const pt = (ev && ev.touches && ev.touches[0]) ? ev.touches[0] : ev;
+        const x = (pt && pt.clientX != null) ? pt.clientX : 0;
+        const y = (pt && pt.clientY != null) ? pt.clientY : 0;
+        const dx = Math.abs(x - lpStartX);
+        const dy = Math.abs(y - lpStartY);
+        if (dx > LP_MOVE_PX || dy > LP_MOVE_PX) clearLP();
+      };
+
+      cell.addEventListener("pointerdown", lpStart);
+      cell.addEventListener("pointermove", lpMove);
 
       cell.addEventListener("pointerup", (ev) => {
         clearLP();
@@ -3190,6 +3208,12 @@ async function ensurePatientsForCalendar() {
       cell.addEventListener("pointerleave", (ev) => {
         clearLP();
       });
+
+      // iOS fallback: touch events (alcune versioni Safari non dispatchano pointer events in modo affidabile)
+      cell.addEventListener("touchstart", lpStart, { passive: true });
+      cell.addEventListener("touchmove", lpMove, { passive: true });
+      cell.addEventListener("touchend", clearLP, { passive: true });
+      cell.addEventListener("touchcancel", clearLP, { passive: true });
 
 frag.appendChild(cell);
     }
@@ -4862,10 +4886,20 @@ levelRow.querySelectorAll(".therapy-level-btn").forEach((b) => {
 
         const clearLP = () => { if (lpTimer) { clearTimeout(lpTimer); lpTimer = null; } };
 
-        btn.addEventListener("pointerdown", () => {
+        const LP_DELAY_MS = 500;
+        const LP_MOVE_PX = 10;
+        let lpStartX = 0;
+        let lpStartY = 0;
+
+        const lpStart = (ev) => {
           if (!patientEditEnabled) return;
           lpFired = false;
           clearLP();
+
+          const pt = (ev && ev.touches && ev.touches[0]) ? ev.touches[0] : ev;
+          lpStartX = (pt && pt.clientX != null) ? pt.clientX : 0;
+          lpStartY = (pt && pt.clientY != null) ? pt.clientY : 0;
+
           lpTimer = setTimeout(() => {
             lpFired = true;
             ensureCurrentTherapies_();
@@ -4878,12 +4912,31 @@ levelRow.querySelectorAll(".therapy-level-btn").forEach((b) => {
               renderTherapiesUI_();
               toast("Giorno rimosso");
             }
-          }, 500);
-        });
+          }, LP_DELAY_MS);
+        };
+
+        const lpMove = (ev) => {
+          if (!lpTimer) return;
+          const pt = (ev && ev.touches && ev.touches[0]) ? ev.touches[0] : ev;
+          const x = (pt && pt.clientX != null) ? pt.clientX : 0;
+          const y = (pt && pt.clientY != null) ? pt.clientY : 0;
+          const dx = Math.abs(x - lpStartX);
+          const dy = Math.abs(y - lpStartY);
+          if (dx > LP_MOVE_PX || dy > LP_MOVE_PX) clearLP();
+        };
+
+        btn.addEventListener("pointerdown", lpStart);
+        btn.addEventListener("pointermove", lpMove);
 
         btn.addEventListener("pointerup", clearLP);
         btn.addEventListener("pointercancel", clearLP);
         btn.addEventListener("pointerleave", clearLP);
+
+        // iOS fallback
+        btn.addEventListener("touchstart", lpStart, { passive: true });
+        btn.addEventListener("touchmove", lpMove, { passive: true });
+        btn.addEventListener("touchend", clearLP, { passive: true });
+        btn.addEventListener("touchcancel", clearLP, { passive: true });
 
         btn.addEventListener("click", (e) => {
           if (lpFired) {
