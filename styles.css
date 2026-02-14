@@ -1,4 +1,4 @@
-/* AMF_1.116 */
+/* AMF_1.117 */
 /* Montalto PMS - PWA iOS / GitHub Pages */
 :root{
   --text: #1b1f23;
@@ -2065,34 +2065,55 @@ body.cal-dragging { touch-action: none; }
   gap:12px;
   align-items:flex-end;
   width:100%;
+  max-width:100%;
+  flex-wrap:nowrap;
 }
 .row-tabs .tab-col{
+  display:flex;
+  flex-direction:column;
   flex:1 1 0;
   min-width:0;
 }
-.field.field-tab{
-  width:100%;
+
+/* wrapper pill per input date/time (stesso look delle pill) */
+.pill-tab{
+  height:56px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:0 16px;
   box-sizing:border-box;
+  overflow:hidden;
 }
 
+/* input: senza bordo/sfondo, centrato, stesso rendering tra Data e Ora */
+.pill-tab-input{
+  width:100%;
+  height:100%;
+  border:0;
+  outline:0;
+  padding:0;
+  margin:0;
+  background:transparent;
+  box-sizing:border-box;
+  font-size:18px;
+  text-align:center;
+  line-height:56px;
+  color:#000;
+  -webkit-text-fill-color:#000;
+  -webkit-appearance:none;
+  appearance:none;
+}
 
-/* iOS: date/time tabs devono restare simmetrici e dentro al popup */
-.row-tabs{
-  max-width: 100%;
-  flex-wrap: nowrap;
+/* evita espansioni/overflow su iOS */
+.pill-tab-input::-webkit-date-and-time-value{ 
+  text-align:center;
 }
-.row-tabs .tab-col{
-  display: flex;
-  flex-direction: column;
-  flex: 1 1 0;
-  min-width: 0;
+.pill-tab-input::-webkit-datetime-edit{
+  padding:0;
 }
-.field.field-tab{
-  display: block;
-  min-width: 0;
-  max-width: 100%;
-  text-align: center;
-  -webkit-appearance: none;
-  appearance: none;
+.pill-tab-input::-webkit-inner-spin-button,
+.pill-tab-input::-webkit-clear-button{
+  display:none;
 }
 

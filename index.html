@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Montalto PMS</title>
-  <link rel="stylesheet" href="./styles.css?v=1.116" />
+  <link rel="stylesheet" href="./styles.css?v=1.117" />
   <link rel="manifest" href="./manifest.json" />
   <meta name="theme-color" content="#2a74b8" />
   <link rel="apple-touch-icon" href="./assets/apple-touch-icon.png" />
@@ -83,7 +83,7 @@
       </section>
         </div>
         <div class="home-footer" aria-label="Build">
-          <div class="build" id="buildLabel">1.116</div>
+          <div class="build" id="buildLabel">1.117</div>
         </div>
       </div>
     </section>
@@ -349,11 +349,11 @@
         <div class="row-tabs" aria-label="Selezione nuova data e ora">
           <div class="tab-col">
             <label class="label" for="moveSessionDate">Data</label>
-            <input class="field field-tab" id="moveSessionDate" type="date" />
+            <div class="pill-wide pill-tab"><input class="pill-tab-input" id="moveSessionDate" type="date" /></div>
           </div>
           <div class="tab-col">
             <label class="label" for="moveSessionTime">Ora</label>
-            <input class="field field-tab" id="moveSessionTime" type="time" step="1800" />
+            <div class="pill-wide pill-tab"><input class="pill-tab-input" id="moveSessionTime" type="time" step="1800" /></div>
           </div>
         </div>
 
@@ -501,6 +501,6 @@
     </div>
 
   <script src="./config.js"></script>
-  <script src="./app.js?v=1.116"></script>
+  <script src="./app.js?v=1.117"></script>
 </body>
 </html>
