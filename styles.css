@@ -1,4 +1,4 @@
-/* AMF_1.115 */
+/* AMF_1.116 */
 /* Montalto PMS - PWA iOS / GitHub Pages */
 :root{
   --text: #1b1f23;
@@ -638,6 +638,7 @@ select.field{ appearance: none; }
   position: relative;
   max-height: calc(100vh - 36px);
   overflow-y: auto;
+  overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
 }
 
@@ -772,6 +773,7 @@ select.field{ appearance: none; }
 #timePickList{
   flex: 1 1 auto;
   overflow-y: auto;
+  overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
   touch-action: pan-y;
   padding-bottom: 6px;
@@ -1291,6 +1293,7 @@ select.field{ appearance: none; }
   grid-column: 1;
   grid-row: 2;
   overflow-y: auto;
+  overflow-x: hidden;
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
 }
@@ -2071,3 +2074,25 @@ body.cal-dragging { touch-action: none; }
   width:100%;
   box-sizing:border-box;
 }
+
+
+/* iOS: date/time tabs devono restare simmetrici e dentro al popup */
+.row-tabs{
+  max-width: 100%;
+  flex-wrap: nowrap;
+}
+.row-tabs .tab-col{
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 0;
+  min-width: 0;
+}
+.field.field-tab{
+  display: block;
+  min-width: 0;
+  max-width: 100%;
+  text-align: center;
+  -webkit-appearance: none;
+  appearance: none;
+}
+

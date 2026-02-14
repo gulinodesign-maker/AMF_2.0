@@ -1,7 +1,7 @@
-/* AMF_1.115 */
+/* AMF_1.116 */
 (() => {
-    const BUILD = "AMF_1.115";
-    const DISPLAY = "1.115";
+    const BUILD = "AMF_1.116";
+    const DISPLAY = "1.116";
 
   // --- Helpers
   const $ = (sel) => document.querySelector(sel);
@@ -3186,8 +3186,7 @@ calBuilt = true;
     const dateEl = $("#moveSessionDate");
     const timeEl = $("#moveSessionTime");
     const fromEl = $("#moveSessionFrom");
-    const titleFromEl = $("#moveSessionFromTitle");
-    const therapyEl = $("#moveSessionTherapyName");
+const therapyEl = $("#moveSessionTherapyName");
 
     const pid = opts && opts.pid != null ? String(opts.pid) : "";
     const fromDay = opts && opts.fromDay != null ? parseInt(opts.fromDay, 10) : 0;
@@ -3209,7 +3208,6 @@ calBuilt = true;
     moveSessionModalState = { pid, fromDay, fromTime };
 
     try {
-      if (titleFromEl) titleFromEl.textContent = "Da";
       if (fromEl) fromEl.textContent = `${fromDate} • ${fromTime}`;
     } catch (_) {}
 
@@ -5611,7 +5609,7 @@ async function renderSocietaDeleteList() {
   // PWA (iOS): registra Service Worker
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {
-      navigator.serviceWorker.register("./service-worker.js?v=1.115").catch(() => {});
+      navigator.serviceWorker.register("./service-worker.js?v=1.116").catch(() => {});
     });
   }
 })();
