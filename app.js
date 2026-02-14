@@ -1,7 +1,7 @@
-/* AMF_1.113 */
+/* AMF_1.114 */
 (() => {
-    const BUILD = "AMF_1.113";
-    const DISPLAY = "1.113";
+    const BUILD = "AMF_1.114";
+    const DISPLAY = "1.114";
 
   // --- Helpers
   const $ = (sel) => document.querySelector(sel);
@@ -1746,9 +1746,6 @@ document.querySelectorAll("[data-route]").forEach((btn) => {
   let calMovesHorizonLoadedAt = 0;
   let calMovesMaxTsByPatient = new Map(); // pid -> max date ts (midnight local) derived from calendario (moves/add)
   const CAL_MOVES_HORIZON_MONTHS = 18; // quanto avanti leggere il calendario (mesi) per scadenze reali
-
-  let calDragState = null;
-
   const CAL_COLOR_START = { r: 160, g: 160, b: 160 }; // grey
   const CAL_COLOR_MID   = { r: 90,  g: 150, b: 210 }; // azzurro chiaro
   const CAL_COLOR_END   = { r: 42,  g: 116, b: 184 }; // azzurro (primary)
@@ -3015,141 +3012,20 @@ async function ensurePatientsForCalendar() {
         if (ids.length !== 1) return;
         void doDeleteSlot(ids[0]);
       });
-
-      // Long-press (0.5s) + drag&drop per spostare UNA seduta su uno slot vuoto
+      // Long-press (0.5s): apre popup per spostare UNA seduta su uno slot vuoto
       let lpTimer = null;
-      let lpFired = false;
 
       const clearLP = () => { if (lpTimer) { clearTimeout(lpTimer); lpTimer = null; } };
 
-      const endDragCleanup = () => {
-        try { document.body.classList.remove("cal-dragging"); } catch (_) {}
-        try { calBody && calBody.querySelectorAll(".cal-cell.drop-target").forEach((x) => x.classList.remove("drop-target")); } catch (_) {}
-        try { calBody && calBody.querySelectorAll(".cal-cell.drag-source").forEach((x) => x.classList.remove("drag-source")); } catch (_) {}
-        if (calDragState && calDragState.ghost && calDragState.ghost.parentNode) {
-          try { calDragState.ghost.parentNode.removeChild(calDragState.ghost); } catch (_) {}
-        }
-        try { document.removeEventListener("pointermove", onDragMove); } catch (_) {}
-        try { document.removeEventListener("pointerup", onDragEnd); } catch (_) {}
-        try { document.removeEventListener("pointercancel", onDragEnd); } catch (_) {}
-        calDragState = null;
-      };
-
-      const onDragMove = (ev) => {
-        if (!calDragState || !calDragState.dragging) return;
-        try { ev.preventDefault(); } catch (_) {}
-
-        const x = ev.clientX;
-        const y = ev.clientY;
-
-        if (calDragState.ghost) {
-          const ox = calDragState.ghostOffsetX || 0;
-          const oy = calDragState.ghostOffsetY || 0;
-          calDragState.ghost.style.transform = `translate(${x - ox}px, ${y - oy}px)`;
-        }
-
-        let el = null;
-        try { el = document.elementFromPoint(x, y); } catch (_) { el = null; }
-        const cell2 = el && el.closest ? el.closest(".cal-cell") : null;
-
-        // reset highlight
-        try { calBody && calBody.querySelectorAll(".cal-cell.drop-target").forEach((n) => n.classList.remove("drop-target")); } catch (_) {}
-
-        if (!cell2 || cell2.classList.contains("disabled")) return;
-
-        const k = `${cell2.dataset.day}|${cell2.dataset.time}`;
-        const info2 = calSlotPatients && calSlotPatients.get ? calSlotPatients.get(k) : null;
-        const occupied = info2 && info2.count;
-
-        // allow drop only on empty slot
-        if (!occupied) {
-          cell2.classList.add("drop-target");
-          calDragState.target = cell2;
-        } else {
-          calDragState.target = null;
-        }
-      };
-
-      const onDragEnd = async (ev) => {
-        if (!calDragState || !calDragState.dragging) return;
-        try { ev.preventDefault(); } catch (_) {}
-
-        const src = calDragState.source;
-        const dst = calDragState.target;
-
-        const pid = calDragState.pid;
-        const fromDay = parseInt(calDragState.fromDay || "0", 10);
-        const fromTime = String(calDragState.fromTime || "");
-        endDragCleanup();
-
-        if (!src || !dst) return;
-
-        const toDay = parseInt(dst.dataset.day || "0", 10);
-        const toTime = String(dst.dataset.time || "");
-
-        if (!pid || !fromDay || !toDay || !fromTime || !toTime) return;
-        if (fromDay === toDay && fromTime === toTime) return;
-
-        // valida slot destinazione vuoto (ultimo controllo)
-        try {
-          const k2 = `${toDay}|${toTime}`;
-          const info2 = calSlotPatients && calSlotPatients.get ? calSlotPatients.get(k2) : null;
-          if (info2 && info2.count) { toast("Slot occupato"); return; }
-        } catch (_) {}
-
-        try {
-          const user = getSession();
-          if (!user || !user.id) { toast("Devi accedere"); return; }
-          const ok = await ensureApiReady();
-          if (!ok) return;
-
-          const year = calSelectedDate.getFullYear();
-          const month = calSelectedDate.getMonth();
-
-          const fromDate = ymdLocal(new Date(year, month, fromDay));
-          const toDate = ymdLocal(new Date(year, month, toDay));
-
-          const effFrom = resolveOriginalSlotForPid_(pid, fromDate, fromTime);
-          const terapiaId = getTherapyIdForPatientAtDate_(pid, effFrom.from_date || fromDate);
-
-          await api("moveSession", {
-            userId: user.id,
-            paziente_id: String(pid),
-            terapia_id: terapiaId,
-            from_date: fromDate,
-            from_time: normTime(fromTime),
-            to_date: toDate,
-            to_time: normTime(toTime)
-          });
-
-          invalidateStatsMovesCache_();
-          toast("Spostato");
-          await updateCalendarUI();
-          try {
-            await loadPatients({ render: false });
-            if (currentView === "pazienti") renderPatients();
-            if (currentView === "stats") await renderStatsTable_();
-          } catch (_) {}
-        } catch (err) {
-          if (apiHintIfUnknownAction(err)) return;
-          toast(String(err && err.message ? err.message : "Errore spostamento"));
-        }
-      };
-
       cell.addEventListener("pointerdown", (ev) => {
-        // Non avviare drag su celle vuote o disabilitate
+        // Non avviare su celle vuote o disabilitate
         if (cell.classList.contains("disabled")) return;
 
-        lpFired = false;
         clearLP();
 
-        const startX = ev.clientX;
-        const startY = ev.clientY;
         const pointerId = ev.pointerId;
 
         lpTimer = setTimeout(() => {
-          lpFired = true;
-
           const slotKey = `${cell.dataset.day}|${cell.dataset.time}`;
           const info = calSlotPatients && calSlotPatients.get ? calSlotPatients.get(slotKey) : null;
           const ids = info && Array.isArray(info.ids) ? info.ids.filter((x) => x != null) : [];
@@ -3159,62 +3035,26 @@ async function ensurePatientsForCalendar() {
 
           const pid = ids[0];
 
-          // start drag
+          // evita click al rilascio
           try { cell.dataset.suppressClick = "1"; } catch (_) {}
 
-          calDragState = {
-            dragging: true,
-            source: cell,
-            target: null,
+          openMoveSessionModal_({
             pid,
-            fromDay: String(cell.dataset.day || ""),
-            fromTime: String(cell.dataset.time || ""),
-            ghost: null,
-            ghostOffsetX: 0,
-            ghostOffsetY: 0
-          };
-
-          try { document.body.classList.add("cal-dragging"); } catch (_) {}
-          try { cell.classList.add("drag-source"); } catch (_) {}
-
-          // ghost
-          try {
-            const r = cell.getBoundingClientRect();
-            const g = document.createElement("div");
-            g.className = "cal-drag-ghost";
-            g.style.position = "fixed";
-            g.style.left = "0px";
-            g.style.top = "0px";
-            g.style.width = `${Math.max(10, r.width)}px`;
-            g.style.height = `${Math.max(10, r.height)}px`;
-            g.style.zIndex = "9999";
-            g.style.pointerEvents = "none";
-            g.style.borderRadius = "10px";
-            g.style.background = "rgba(255,255,255,0.8)";
-            g.style.outline = "2px solid rgba(0,160,255,0.9)";
-            g.style.transform = `translate(${startX}px, ${startY}px)`;
-            document.body.appendChild(g);
-            calDragState.ghost = g;
-            calDragState.ghostOffsetX = Math.min(r.width / 2, 18);
-            calDragState.ghostOffsetY = Math.min(r.height / 2, 18);
-          } catch (_) {}
-
-          try { document.addEventListener("pointermove", onDragMove, { passive: false }); } catch (_) {}
-          try { document.addEventListener("pointerup", onDragEnd, { passive: false }); } catch (_) {}
-          try { document.addEventListener("pointercancel", onDragEnd, { passive: false }); } catch (_) {}
+            fromDay: parseInt(cell.dataset.day || "0", 10),
+            fromTime: String(cell.dataset.time || "")
+          });
 
           try { cell.setPointerCapture(pointerId); } catch (_) {}
         }, 500);
       });
 
-      cell.addEventListener("pointerup", (ev) => {
+      cell.addEventListener("pointerup", () => {
         clearLP();
       });
-      cell.addEventListener("pointercancel", (ev) => {
+      cell.addEventListener("pointercancel", () => {
         clearLP();
-        endDragCleanup();
       });
-      cell.addEventListener("pointerleave", (ev) => {
+      cell.addEventListener("pointerleave", () => {
         clearLP();
       });
 
@@ -3270,6 +3110,155 @@ frag.appendChild(cell);
   });
 calBuilt = true;
 }
+
+  // --- Modal: Sposta seduta (single instance / override calendario)
+  let moveSessionModalState = null;
+
+  function openMoveSessionModal_(opts) {
+    const modal = $("#modalMoveSession");
+    if (!modal) return;
+
+    const dateEl = $("#moveSessionDate");
+    const timeEl = $("#moveSessionTime");
+    const fromEl = $("#moveSessionFrom");
+    const titleFromEl = $("#moveSessionFromTitle");
+
+    const pid = opts && opts.pid != null ? String(opts.pid) : "";
+    const fromDay = opts && opts.fromDay != null ? parseInt(opts.fromDay, 10) : 0;
+    const fromTime = normTime(opts && opts.fromTime != null ? opts.fromTime : "");
+
+    if (!pid || !fromDay || !fromTime) return;
+
+    // Range vincolato al mese corrente (stesso comportamento del drag precedente)
+    const year = calSelectedDate.getFullYear();
+    const month = calSelectedDate.getMonth();
+    const daysInThisMonth = new Date(year, month + 1, 0).getDate();
+
+    const fromDate = ymdLocal(new Date(year, month, fromDay));
+
+    moveSessionModalState = { pid, fromDay, fromTime };
+
+    try {
+      if (titleFromEl) titleFromEl.textContent = "Da";
+      if (fromEl) fromEl.textContent = `${fromDate} • ${fromTime}`;
+    } catch (_) {}
+
+    if (dateEl) {
+      try {
+        dateEl.min = ymdLocal(new Date(year, month, 1));
+        dateEl.max = ymdLocal(new Date(year, month, daysInThisMonth));
+      } catch (_) {}
+      try { dateEl.value = fromDate; } catch (_) {}
+    }
+
+    if (timeEl) {
+      try {
+        const minT = Array.isArray(calHours) && calHours.length ? calHours[0] : "07:30";
+        const maxT = Array.isArray(calHours) && calHours.length ? calHours[calHours.length - 1] : "21:00";
+        timeEl.min = minT;
+        timeEl.max = maxT;
+        timeEl.step = "1800";
+      } catch (_) {}
+      try { timeEl.value = fromTime; } catch (_) {}
+    }
+
+    modal.classList.add("show");
+    modal.setAttribute("aria-hidden", "false");
+    try { dateEl && dateEl.focus && dateEl.focus(); } catch (_) {}
+  }
+
+  function closeMoveSessionModal_() {
+    const modal = $("#modalMoveSession");
+    if (!modal) return;
+    modal.classList.remove("show");
+    modal.setAttribute("aria-hidden", "true");
+    moveSessionModalState = null;
+  }
+
+  async function confirmMoveSessionModal_() {
+    try {
+      if (!moveSessionModalState) return;
+
+      const pid = String(moveSessionModalState.pid || "");
+      const fromDay = parseInt(moveSessionModalState.fromDay || "0", 10);
+      const fromTime = normTime(moveSessionModalState.fromTime || "");
+
+      const dateEl = $("#moveSessionDate");
+      const timeEl = $("#moveSessionTime");
+      const dateStr = String(dateEl && dateEl.value ? dateEl.value : "").slice(0, 10);
+      const timeStr = normTime(timeEl && timeEl.value ? timeEl.value : "");
+
+      if (!pid || !fromDay || !fromTime) return;
+      if (!dateStr || !timeStr) { toast("Inserisci data e ora"); return; }
+
+      // Valida mese corrente (come drag)
+      const year = calSelectedDate.getFullYear();
+      const month = calSelectedDate.getMonth();
+      const dim = new Date(year, month + 1, 0).getDate();
+
+      const pYmd = parseYmd_(dateStr);
+      if (!pYmd) { toast("Data non valida"); return; }
+      if (pYmd.y !== year || pYmd.m !== month) { toast("Seleziona una data nel mese corrente"); return; }
+      const toDay = pYmd.d;
+      if (!toDay || toDay < 1 || toDay > dim) { toast("Data non valida"); return; }
+
+      // Valida ora: solo slot disponibili
+      if (!Array.isArray(calHours) || !calHours.includes(timeStr)) { toast("Ora non valida"); return; }
+
+      if (fromDay === toDay && fromTime === timeStr) return;
+
+      // valida slot destinazione vuoto (stesso controllo del drag)
+      try {
+        const k2 = `${toDay}|${timeStr}`;
+        const info2 = calSlotPatients && calSlotPatients.get ? calSlotPatients.get(k2) : null;
+        if (info2 && info2.count) { toast("Slot occupato"); return; }
+      } catch (_) {}
+
+      const user = getSession();
+      if (!user || !user.id) { toast("Devi accedere"); return; }
+      const ok = await ensureApiReady();
+      if (!ok) return;
+
+      const fromDate = ymdLocal(new Date(year, month, fromDay));
+      const toDate = ymdLocal(new Date(year, month, toDay));
+
+      const effFrom = resolveOriginalSlotForPid_(pid, fromDate, fromTime);
+      const terapiaId = getTherapyIdForPatientAtDate_(pid, effFrom.from_date || fromDate);
+
+      await api("moveSession", {
+        userId: user.id,
+        paziente_id: String(pid),
+        terapia_id: terapiaId,
+        from_date: fromDate,
+        from_time: normTime(fromTime),
+        to_date: toDate,
+        to_time: normTime(timeStr)
+      });
+
+      invalidateStatsMovesCache_();
+      closeMoveSessionModal_();
+      toast("Spostato");
+      await updateCalendarUI();
+      try {
+        await loadPatients({ render: false });
+        if (currentView === "pazienti") renderPatients();
+        if (currentView === "stats") await renderStatsTable_();
+      } catch (_) {}
+    } catch (err) {
+      if (apiHintIfUnknownAction(err)) return;
+      toast(String(err && err.message ? err.message : "Errore spostamento"));
+    }
+  }
+
+  (function bindMoveSessionModal_() {
+    const modal = $("#modalMoveSession");
+    if (!modal) return;
+
+    $("#btnMoveSessionClose")?.addEventListener("click", closeMoveSessionModal_);
+    $("#btnMoveSessionCancel")?.addEventListener("click", closeMoveSessionModal_);
+    $("#btnMoveSessionConfirm")?.addEventListener("click", () => { void confirmMoveSessionModal_(); });
+    modal.addEventListener("click", (e) => { if (e.target === modal) closeMoveSessionModal_(); });
+  })();
 
 function scrollCalendarToNow() {
   // Back-compat: usa il focus robusto su giorno+ora correnti
@@ -5554,7 +5543,7 @@ async function renderSocietaDeleteList() {
   // PWA (iOS): registra Service Worker
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {
-      navigator.serviceWorker.register("./service-worker.js?v=1.110").catch(() => {});
+      navigator.serviceWorker.register("./service-worker.js?v=1.114").catch(() => {});
     });
   }
 })();
