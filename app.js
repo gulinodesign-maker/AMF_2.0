@@ -1,7 +1,7 @@
-/* AMF_1.114 */
+/* AMF_1.115 */
 (() => {
-    const BUILD = "AMF_1.114";
-    const DISPLAY = "1.114";
+    const BUILD = "AMF_1.115";
+    const DISPLAY = "1.115";
 
   // --- Helpers
   const $ = (sel) => document.querySelector(sel);
@@ -3114,6 +3114,71 @@ calBuilt = true;
   // --- Modal: Sposta seduta (single instance / override calendario)
   let moveSessionModalState = null;
 
+
+  function getTherapyLabelForPatientSlot_(pid, fromYmd, fromTime) {
+    try {
+      const p = getPatientFromCacheById_(pid);
+      if (!p) return "Terapia";
+      const target = dateOnlyLocal(String(fromYmd || "").slice(0, 10));
+      const t = normTime(fromTime || "");
+      if (!target || !t) return "Terapia";
+
+      const wk = target.getDay(); // 0..6
+      const therapies = parseTherapiesFromPatient_(p) || [];
+      let bestIndex = -1;
+      let bestStart = -1;
+
+      for (let i = 0; i < therapies.length; i++) {
+        const th = normalizeTherapy_(therapies[i]);
+        if (!th) continue;
+
+        const s = dateOnlyLocal(th.data_inizio || "");
+        const e = dateOnlyLocal(th.data_fine || "");
+        if (s && target.getTime() < s.getTime()) continue;
+        if (e && target.getTime() > e.getTime()) continue;
+
+        const map = th.giorni_map && typeof th.giorni_map === "object" ? th.giorni_map : {};
+        const keys = Object.keys(map);
+        if (!keys.length) continue;
+
+        let matches = false;
+
+        for (const k of keys) {
+          const dayLabel = __normDayLabel(k);
+          let wk2 = DAY_LABEL_TO_KEY[dayLabel];
+
+          if (wk2 == null && /^\d+$/.test(dayLabel)) {
+            const n = parseInt(dayLabel, 10);
+            if (n === 7) wk2 = 0;
+            else if (n >= 0 && n <= 6) wk2 = n;
+            else if (n >= 1 && n <= 6) wk2 = n;
+          }
+
+          if (wk2 == null || wk2 !== wk) continue;
+
+          const times = normalizeTimeList(map[k]);
+          if (Array.isArray(times) && times.some((x) => normTime(x) === t)) {
+            matches = true;
+            break;
+          }
+        }
+
+        if (!matches) continue;
+
+        const startScore = s ? s.getTime() : 0;
+        if (startScore >= bestStart) {
+          bestStart = startScore;
+          bestIndex = i;
+        }
+      }
+
+      if (bestIndex >= 0) return `Terapia ${bestIndex + 1}`;
+      return "Terapia";
+    } catch (_) {
+      return "Terapia";
+    }
+  }
+
   function openMoveSessionModal_(opts) {
     const modal = $("#modalMoveSession");
     if (!modal) return;
@@ -3122,6 +3187,7 @@ calBuilt = true;
     const timeEl = $("#moveSessionTime");
     const fromEl = $("#moveSessionFrom");
     const titleFromEl = $("#moveSessionFromTitle");
+    const therapyEl = $("#moveSessionTherapyName");
 
     const pid = opts && opts.pid != null ? String(opts.pid) : "";
     const fromDay = opts && opts.fromDay != null ? parseInt(opts.fromDay, 10) : 0;
@@ -3135,6 +3201,10 @@ calBuilt = true;
     const daysInThisMonth = new Date(year, month + 1, 0).getDate();
 
     const fromDate = ymdLocal(new Date(year, month, fromDay));
+
+    try {
+      if (therapyEl) therapyEl.textContent = getTherapyLabelForPatientSlot_(pid, fromDate, fromTime);
+    } catch (_) {}
 
     moveSessionModalState = { pid, fromDay, fromTime };
 
@@ -3253,8 +3323,6 @@ calBuilt = true;
   (function bindMoveSessionModal_() {
     const modal = $("#modalMoveSession");
     if (!modal) return;
-
-    $("#btnMoveSessionClose")?.addEventListener("click", closeMoveSessionModal_);
     $("#btnMoveSessionCancel")?.addEventListener("click", closeMoveSessionModal_);
     $("#btnMoveSessionConfirm")?.addEventListener("click", () => { void confirmMoveSessionModal_(); });
     modal.addEventListener("click", (e) => { if (e.target === modal) closeMoveSessionModal_(); });
@@ -5543,7 +5611,7 @@ async function renderSocietaDeleteList() {
   // PWA (iOS): registra Service Worker
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {
-      navigator.serviceWorker.register("./service-worker.js?v=1.114").catch(() => {});
+      navigator.serviceWorker.register("./service-worker.js?v=1.115").catch(() => {});
     });
   }
 })();

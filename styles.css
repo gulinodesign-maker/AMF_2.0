@@ -1,4 +1,4 @@
-/* AMF_1.114 */
+/* AMF_1.115 */
 /* Montalto PMS - PWA iOS / GitHub Pages */
 :root{
   --text: #1b1f23;
@@ -2053,4 +2053,21 @@ body.cal-dragging { touch-action: none; }
 #viewCalendar .cal-hours-scroll,
 #viewCalendar .cal-body-scroll{
   height: 100%;
+}
+
+
+/* Modal: Sposta seduta - tabs data/ora (allineati e identici) */
+.row-tabs{
+  display:flex;
+  gap:12px;
+  align-items:flex-end;
+  width:100%;
+}
+.row-tabs .tab-col{
+  flex:1 1 0;
+  min-width:0;
+}
+.field.field-tab{
+  width:100%;
+  box-sizing:border-box;
 }
