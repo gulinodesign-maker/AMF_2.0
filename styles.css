@@ -1,4 +1,4 @@
-/* AMF_1.115 */
+/* AMF_1.112 */
 /* Montalto PMS - PWA iOS / GitHub Pages */
 :root{
   --text: #1b1f23;
@@ -19,22 +19,6 @@ html{
   background-color:#e9eef3;
 }
 html,body{ min-height:100%; height:auto; }
-
-/* iOS: prevent text selection / callout during long-press interactions */
-.no-select, .no-select *{
-  -webkit-user-select: none !important;
-  user-select: none !important;
-  -webkit-touch-callout: none !important;
-}
-
-.cal-cell, .cal-day, .cal-hour, .cal-body, .cal-scroll{
-  -webkit-user-select: none;
-  user-select: none;
-  -webkit-touch-callout: none;
-}
-.cal-cell{ touch-action: manipulation; }
-
-
 body{
   margin:0;
   min-height:100%;
@@ -2070,25 +2054,3 @@ body.cal-dragging { touch-action: none; }
 #viewCalendar .cal-body-scroll{
   height: 100%;
 }
-
-/* --- iOS: evita selezione testo su long-press (calendario + terapie) --- */
-.cal-cell,
-.day-btn,
-.pill-btn,
-.circle-btn,
-.topbar button,
-button{
-  -webkit-user-select: none;
-  user-select: none;
-  -webkit-touch-callout: none;
-}
-
-.cal-cell,
-.day-btn,
-.pill-btn,
-.circle-btn,
-.topbar button{
-  touch-action: manipulation;
-}
-
-.row-days .day-btn{ -webkit-touch-callout:none; -webkit-user-select:none; user-select:none; touch-action: manipulation; }

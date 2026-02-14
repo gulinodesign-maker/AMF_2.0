@@ -1,14 +1,9 @@
-/* AMF_1.116 */
+/* AMF_1.112 */
 (() => {
-    const BUILD = "AMF_1.116";
-    const DISPLAY = "1.116";
+    const BUILD = "AMF_1.112";
+    const DISPLAY = "1.112";
 
-  
-  // iOS: prevent unwanted text selection / callout during long-press gestures
-  const __noSelectOn = () => { try { document.documentElement.classList.add("no-select"); document.body.classList.add("no-select"); } catch(_){} };
-  const __noSelectOff = () => { try { document.documentElement.classList.remove("no-select"); document.body.classList.remove("no-select"); } catch(_){} };
-
-// --- Helpers
+  // --- Helpers
   const $ = (sel) => document.querySelector(sel);
 
   const toastEl = $("#toast");
@@ -3025,7 +3020,7 @@ async function ensurePatientsForCalendar() {
       let lpTimer = null;
       let lpFired = false;
 
-      const clearLP = () => { if (lpTimer) { clearTimeout(lpTimer); lpTimer = null; } __noSelectOff(); };
+      const clearLP = () => { if (lpTimer) { clearTimeout(lpTimer); lpTimer = null; } };
 
       const endDragCleanup = () => {
         try { document.body.classList.remove("cal-dragging"); } catch (_) {}
@@ -3141,22 +3136,16 @@ async function ensurePatientsForCalendar() {
         }
       };
 
-      const LP_DELAY_MS = 500;
-      const LP_MOVE_PX = 10;
-      let lpStartX = 0;
-      let lpStartY = 0;
-
-      const lpStart = (ev) => {
-        // Non avviare su celle disabilitate
+      cell.addEventListener("pointerdown", (ev) => {
+        // Non avviare drag su celle vuote o disabilitate
         if (cell.classList.contains("disabled")) return;
-        __noSelectOn();
 
         lpFired = false;
         clearLP();
 
-        const pt = (ev && ev.touches && ev.touches[0]) ? ev.touches[0] : ev;
-        lpStartX = (pt && pt.clientX != null) ? pt.clientX : 0;
-        lpStartY = (pt && pt.clientY != null) ? pt.clientY : 0;
+        const startX = ev.clientX;
+        const startY = ev.clientY;
+        const pointerId = ev.pointerId;
 
         lpTimer = setTimeout(() => {
           lpFired = true;
@@ -3170,39 +3159,53 @@ async function ensurePatientsForCalendar() {
 
           const pid = ids[0];
 
-          // open move popup (0.5s long-press)
+          // start drag
           try { cell.dataset.suppressClick = "1"; } catch (_) {}
 
+          calDragState = {
+            dragging: true,
+            source: cell,
+            target: null,
+            pid,
+            fromDay: String(cell.dataset.day || ""),
+            fromTime: String(cell.dataset.time || ""),
+            ghost: null,
+            ghostOffsetX: 0,
+            ghostOffsetY: 0
+          };
+
+          try { document.body.classList.add("cal-dragging"); } catch (_) {}
+          try { cell.classList.add("drag-source"); } catch (_) {}
+
+          // ghost
           try {
-            const year = calSelectedDate.getFullYear();
-            const month = calSelectedDate.getMonth();
-            const fromDayNum = parseInt(cell.dataset.day || "0", 10);
-            const fromTime2 = String(cell.dataset.time || "");
-            const fromDate2 = ymdLocal(new Date(year, month, fromDayNum));
+            const r = cell.getBoundingClientRect();
+            const g = document.createElement("div");
+            g.className = "cal-drag-ghost";
+            g.style.position = "fixed";
+            g.style.left = "0px";
+            g.style.top = "0px";
+            g.style.width = `${Math.max(10, r.width)}px`;
+            g.style.height = `${Math.max(10, r.height)}px`;
+            g.style.zIndex = "9999";
+            g.style.pointerEvents = "none";
+            g.style.borderRadius = "10px";
+            g.style.background = "rgba(255,255,255,0.8)";
+            g.style.outline = "2px solid rgba(0,160,255,0.9)";
+            g.style.transform = `translate(${startX}px, ${startY}px)`;
+            document.body.appendChild(g);
+            calDragState.ghost = g;
+            calDragState.ghostOffsetX = Math.min(r.width / 2, 18);
+            calDragState.ghostOffsetY = Math.min(r.height / 2, 18);
+          } catch (_) {}
 
-            openMoveSessionModal_({
-              pid,
-              fromDate: fromDate2,
-              fromTime: fromTime2
-            });
-          } catch (err) {
-            toast("Errore apertura spostamento");
-          }
-        }, LP_DELAY_MS);
-      };
+          try { document.addEventListener("pointermove", onDragMove, { passive: false }); } catch (_) {}
+          try { document.addEventListener("pointerup", onDragEnd, { passive: false }); } catch (_) {}
+          try { document.addEventListener("pointercancel", onDragEnd, { passive: false }); } catch (_) {}
 
-      const lpMove = (ev) => {
-        if (!lpTimer) return;
-        const pt = (ev && ev.touches && ev.touches[0]) ? ev.touches[0] : ev;
-        const x = (pt && pt.clientX != null) ? pt.clientX : 0;
-        const y = (pt && pt.clientY != null) ? pt.clientY : 0;
-        const dx = Math.abs(x - lpStartX);
-        const dy = Math.abs(y - lpStartY);
-        if (dx > LP_MOVE_PX || dy > LP_MOVE_PX) clearLP();
-      };
-
-      cell.addEventListener("pointerdown", lpStart);
-      cell.addEventListener("pointermove", lpMove);
+          try { cell.setPointerCapture(pointerId); } catch (_) {}
+        }, 500);
+      });
 
       cell.addEventListener("pointerup", (ev) => {
         clearLP();
@@ -3214,12 +3217,6 @@ async function ensurePatientsForCalendar() {
       cell.addEventListener("pointerleave", (ev) => {
         clearLP();
       });
-
-      // iOS fallback: touch events (alcune versioni Safari non dispatchano pointer events in modo affidabile)
-      cell.addEventListener("touchstart", lpStart, { passive: false });
-      cell.addEventListener("touchmove", lpMove, { passive: false });
-      cell.addEventListener("touchend", clearLP, { passive: false });
-      cell.addEventListener("touchcancel", clearLP, { passive: false });
 
 frag.appendChild(cell);
     }
@@ -4175,7 +4172,6 @@ function formatItMonth(dateObj) {
       btnPick.toggleAttribute("disabled", !patientEditEnabled);
     }
     try { renderTherapiesUI_(); } catch (_) {}
-    try { if (patientEditEnabled) { setTimeout(__forceEnableTherapyControls_, 0); setTimeout(__forceEnableTherapyControls_, 200); } } catch (_) {}
 
         $("#btnPatSave")?.toggleAttribute("disabled", !patientEditEnabled);
     if (!patientEditEnabled) $("#btnPatSave")?.classList.add("pill-gray");
@@ -4189,11 +4185,7 @@ function formatItMonth(dateObj) {
       else btnDel.setAttribute("hidden", "");
       btnDel.setAttribute("aria-label", patientEditEnabled ? "Chiudi" : "Elimina paziente");
     }
-  
-
-    // Refresh terapie UI (abilita/disabilita correttamente dopo toggle modifica)
-    try { renderTherapiesUI_(); } catch (_) {}
-}
+  }
 
   
 
@@ -4321,16 +4313,6 @@ function formatItMonth(dateObj) {
   const modalPickTime = $("#modalPickTime");
   const timePickList = $("#timePickList");
   const btnPickTimeClose = $("#btnPickTimeClose");
-  // ---- Move session modal (calendar long-press)
-  const modalMoveSession = $("#modalMoveSession");
-  const btnMoveSessionClose = $("#btnMoveSessionClose");
-  const btnMoveSessionOk = $("#btnMoveSessionOk");
-  const btnMoveSessionCancel = $("#btnMoveSessionCancel");
-  const moveSessionDate = $("#moveSessionDate");
-  const moveSessionTime = $("#moveSessionTime");
-  let pendingMoveSession = null;
-
-
 
   // ---- Modal errore terapia (no sovrapposizioni)
   const modalTherapyError = $("#modalTherapyError");
@@ -4431,97 +4413,6 @@ function formatItMonth(dateObj) {
   }
   btnPickTimeClose?.addEventListener("click", closePickTimeModal);
   modalPickTime?.addEventListener("click", (e) => { if (e.target === modalPickTime) closePickTimeModal(); });
-
-
-  function openMoveSessionModal_(ctx) {
-    if (!modalMoveSession) return;
-    pendingMoveSession = ctx || null;
-
-    // Prefill: data e ora attuali dello slot
-    try {
-      if (moveSessionDate && ctx && ctx.fromDate) moveSessionDate.value = String(ctx.fromDate || "");
-    } catch (_) {}
-    try {
-      if (moveSessionTime && ctx && ctx.fromTime) moveSessionTime.value = normTime(ctx.fromTime);
-    } catch (_) {}
-
-    modalMoveSession.classList.add("show");
-    modalMoveSession.setAttribute("aria-hidden", "false");
-  }
-  function closeMoveSessionModal_() {
-    if (!modalMoveSession) return;
-    modalMoveSession.classList.remove("show");
-    modalMoveSession.setAttribute("aria-hidden", "true");
-    pendingMoveSession = null;
-  }
-
-  btnMoveSessionClose?.addEventListener("click", closeMoveSessionModal_);
-  btnMoveSessionCancel?.addEventListener("click", closeMoveSessionModal_);
-  modalMoveSession?.addEventListener("click", (e) => { if (e.target === modalMoveSession) closeMoveSessionModal_(); });
-
-  btnMoveSessionOk?.addEventListener("click", async () => {
-    if (!pendingMoveSession) { closeMoveSessionModal_(); return; }
-    const ctx = pendingMoveSession;
-
-    const toDate = String(moveSessionDate && moveSessionDate.value ? moveSessionDate.value : "").trim();
-    const toTime = normTime(moveSessionTime && moveSessionTime.value ? moveSessionTime.value : "");
-
-    if (!toDate || !toTime) { toast("Inserisci data e ora"); return; }
-
-    // Se la data è nel mese visualizzato, valida slot destinazione vuoto
-    try {
-      const y = calSelectedDate.getFullYear();
-      const m = calSelectedDate.getMonth();
-      const dt = new Date(toDate + "T00:00:00");
-      if (!isNaN(dt) && dt.getFullYear() === y && dt.getMonth() === m) {
-        const toDay = dt.getDate();
-        const k2 = `${toDay}|${toTime}`;
-        const info2 = calSlotPatients && calSlotPatients.get ? calSlotPatients.get(k2) : null;
-        if (info2 && info2.count) { toast("Slot occupato"); return; }
-      }
-    } catch (_) {}
-
-    try {
-      const user = getSession();
-      if (!user || !user.id) { toast("Devi accedere"); return; }
-      const ok = await ensureApiReady();
-      if (!ok) return;
-
-      // Da: mese visualizzato + giorno/ora
-      const fromDate = String(ctx.fromDate || "");
-      const fromTime = String(ctx.fromTime || "");
-      const pid = ctx.pid;
-
-      const effFrom = resolveOriginalSlotForPid_(pid, fromDate, fromTime);
-      const terapiaId = getTherapyIdForPatientAtDate_(pid, effFrom.from_date || fromDate);
-
-      await api("moveSession", {
-        userId: user.id,
-        paziente_id: String(pid),
-        terapia_id: terapiaId,
-        from_date: fromDate,
-        from_time: normTime(fromTime),
-        to_date: toDate,
-        to_time: toTime
-      });
-
-      invalidateStatsMovesCache_();
-      toast("Spostato");
-      closeMoveSessionModal_();
-
-      await updateCalendarUI();
-      try {
-        await loadPatients({ render: false });
-        if (currentView === "pazienti") renderPatients();
-        if (currentView === "stats") await renderStatsTable_();
-      } catch (_) {}
-    } catch (err) {
-      if (apiHintIfUnknownAction(err)) return;
-      toast(String(err && err.message ? err.message : "Errore spostamento"));
-    }
-  });
-
-
 
   const therapiesWrap = $("#therapiesWrap");
   const btnAddTherapy = $("#btnAddTherapy");
@@ -4891,23 +4782,12 @@ levelRow.querySelectorAll(".therapy-level-btn").forEach((b) => {
         let lpTimer = null;
         let lpFired = false;
 
-        const clearLP = () => { if (lpTimer) { clearTimeout(lpTimer); lpTimer = null; } __noSelectOff(); };
+        const clearLP = () => { if (lpTimer) { clearTimeout(lpTimer); lpTimer = null; } };
 
-        const LP_DELAY_MS = 500;
-        const LP_MOVE_PX = 10;
-        let lpStartX = 0;
-        let lpStartY = 0;
-
-        const lpStart = (ev) => {
+        btn.addEventListener("pointerdown", () => {
           if (!patientEditEnabled) return;
-          __noSelectOn();
           lpFired = false;
           clearLP();
-
-          const pt = (ev && ev.touches && ev.touches[0]) ? ev.touches[0] : ev;
-          lpStartX = (pt && pt.clientX != null) ? pt.clientX : 0;
-          lpStartY = (pt && pt.clientY != null) ? pt.clientY : 0;
-
           lpTimer = setTimeout(() => {
             lpFired = true;
             ensureCurrentTherapies_();
@@ -4920,31 +4800,12 @@ levelRow.querySelectorAll(".therapy-level-btn").forEach((b) => {
               renderTherapiesUI_();
               toast("Giorno rimosso");
             }
-          }, LP_DELAY_MS);
-        };
-
-        const lpMove = (ev) => {
-          if (!lpTimer) return;
-          const pt = (ev && ev.touches && ev.touches[0]) ? ev.touches[0] : ev;
-          const x = (pt && pt.clientX != null) ? pt.clientX : 0;
-          const y = (pt && pt.clientY != null) ? pt.clientY : 0;
-          const dx = Math.abs(x - lpStartX);
-          const dy = Math.abs(y - lpStartY);
-          if (dx > LP_MOVE_PX || dy > LP_MOVE_PX) clearLP();
-        };
-
-        btn.addEventListener("pointerdown", lpStart);
-        btn.addEventListener("pointermove", lpMove);
+          }, 500);
+        });
 
         btn.addEventListener("pointerup", clearLP);
         btn.addEventListener("pointercancel", clearLP);
         btn.addEventListener("pointerleave", clearLP);
-
-        // iOS fallback
-        btn.addEventListener("touchstart", lpStart, { passive: false });
-        btn.addEventListener("touchmove", lpMove, { passive: false });
-        btn.addEventListener("touchend", clearLP, { passive: false });
-        btn.addEventListener("touchcancel", clearLP, { passive: false });
 
         btn.addEventListener("click", (e) => {
           if (lpFired) {
@@ -4988,21 +4849,7 @@ levelRow.querySelectorAll(".therapy-level-btn").forEach((b) => {
     }
   }
 
-  
-  function __forceEnableTherapyControls_() {
-    try {
-      const wrap = therapiesWrap;
-      if (!wrap) return;
-      wrap.querySelectorAll(".row-days .day-btn, .therapy-level-btn, input[type=date]").forEach((el) => {
-        if (!el) return;
-        el.removeAttribute("disabled");
-        el.disabled = false;
-        el.style.pointerEvents = "";
-      });
-    } catch (_) {}
-  }
-
-btnAddTherapy?.addEventListener("click", () => {
+  btnAddTherapy?.addEventListener("click", () => {
     if (!patientEditEnabled) return;
     ensureCurrentTherapies_();
     currentPatient.terapie_arr.push(normalizeTherapy_({}));
