@@ -1,7 +1,7 @@
-/* AMF_1.112 */
+/* AMF_1.113 */
 (() => {
-    const BUILD = "AMF_1.112";
-    const DISPLAY = "1.112";
+    const BUILD = "AMF_1.113";
+    const DISPLAY = "1.113";
 
   // --- Helpers
   const $ = (sel) => document.querySelector(sel);
@@ -4443,10 +4443,17 @@ function formatItMonth(dateObj) {
     o.livello = String(o.livello || o.level || "").trim();
     o.data_inizio = String(o.data_inizio || o.start || "").trim();
     o.data_fine = String(o.data_fine || o.end || "").trim();
-    // giorni_settimana può essere oggetto o JSON string
-    const raw = (o.giorni_settimana !== undefined) ? o.giorni_settimana : (o.giorni !== undefined ? o.giorni : (o.giorni_map || {}));
+    // giorni_settimana può essere oggetto o JSON string.
+    // In UI la fonte canonica è "giorni_map": se presente, usalo (anche se vuoto) per non sovrascrivere gli edit.
+    let raw;
+    if (o.giorni_map !== undefined) raw = o.giorni_map;
+    else if (o.giorni_settimana !== undefined) raw = o.giorni_settimana;
+    else if (o.giorni !== undefined) raw = o.giorni;
+    else raw = {};
     const map = parseGiorniMap(raw);
     o.giorni_map = map && typeof map === "object" ? map : {};
+    // Mantieni in sync per compatibilità con codice che legge prima "giorni_settimana"
+    o.giorni_settimana = o.giorni_map;
     return o;
   }
 
