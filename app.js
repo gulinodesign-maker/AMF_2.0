@@ -1,7 +1,7 @@
-/* AMF_1.118 */
+/* AMF_1.119 */
 (() => {
-    const BUILD = "AMF_1.118";
-    const DISPLAY = "1.118";
+    const BUILD = "AMF_1.119";
+    const DISPLAY = "1.119";
 
   // --- Helpers
   const $ = (sel) => document.querySelector(sel);
@@ -359,15 +359,79 @@
     });
   }
 
+  // POST API (per payload grandi: evita limiti URL/JSONP su iOS/Android)
+  async function apiPost(action, params) {
+    const base = getApiUrl();
+    if (!base) throw new Error("API_URL_MISSING");
+
+    const bodyObj = Object.assign({ action }, params || {}, { _: Date.now() });
+
+    let res;
+    try {
+      res = await fetch(base, {
+        method: "POST",
+        cache: "no-store",
+        redirect: "follow",
+        mode: "cors",
+        credentials: "omit",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify(bodyObj)
+      });
+    } catch (e) {
+      throw e;
+    }
+
+    const txt = await res.text().catch(() => "");
+    let data = null;
+    try { data = txt ? JSON.parse(txt) : null; } catch (_) { data = null; }
+
+    if (!data || data.ok !== true) {
+      throw new Error((data && data.error) ? String(data.error) : "Errore API");
+    }
+    return data;
+  }
+
+  function shouldUsePostFor_(action, params) {
+    try {
+      const p = params || {};
+      const url = buildUrl(action, Object.assign({}, p, { _: Date.now() }));
+      const payloadStr = (typeof p.payload === "string") ? p.payload : "";
+      // soglie conservative per evitare troncamenti su Android/iOS
+      if (url.length > 1700) return true;
+      if (payloadStr && payloadStr.length > 1100) return true;
+      return false;
+    } catch (_) {
+      return false;
+    }
+  }
+
+
   async function api(action, params) {
     const base = getApiUrl();
     if (!base) throw new Error("API_URL_MISSING");
 
-    // iOS PWA: JSONP evita blocchi CORS/redirect (fallback a fetch se serve)
+    const p = params || {};
+
+    // Se il payload è grande (es. terapie multiple) usa POST per evitare limiti URL/JSONP su Android/iOS.
+    if (shouldUsePostFor_(action, p)) {
+      try {
+        return await apiPost(action, p);
+      } catch (err) {
+        // Se fallisce, non riprovare con GET/JSONP: rischia troncamenti.
+        // Messaggio guidato per capire subito che serve abilitare POST/CORS lato script.
+        const msg = (err && err.message) ? String(err.message) : "";
+        if (msg && /cors|failed to fetch|networkerror|typeerror/i.test(msg)) {
+          throw new Error("Salvataggio troppo grande: abilita POST/CORS nello script");
+        }
+        throw err;
+      }
+    }
+
+    // iOS PWA: JSONP evita blocchi CORS/redirect (fallback a fetch GET se serve)
     try {
-      return await apiJsonp(action, params);
+      return await apiJsonp(action, p);
     } catch (_) {
-      const url = buildUrl(action, Object.assign({}, params || {}, { _: Date.now() }));
+      const url = buildUrl(action, Object.assign({}, p, { _: Date.now() }));
       const res = await fetch(url, { method: "GET", cache: "no-store" });
       const data = await res.json().catch(() => null);
       if (!data || data.ok !== true) {
@@ -5609,7 +5673,7 @@ async function renderSocietaDeleteList() {
   // PWA (iOS): registra Service Worker
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {
-      navigator.serviceWorker.register("./service-worker.js?v=1.118").catch(() => {});
+      navigator.serviceWorker.register("./service-worker.js?v=1.119").catch(() => {});
     });
   }
 })();
