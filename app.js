@@ -1,6 +1,6 @@
-/* AMF_1.121 */
+/* AMF_1.122 */
 (() => {
-    const BUILD = "AMF_1.121";
+    const BUILD = "AMF_1.122";
     const DISPLAY = "1.121";
 
   // --- Helpers
@@ -4203,54 +4203,23 @@ function formatItMonth(dateObj) {
           </svg>
         </button>
       `;
-
-      // Robust tap/click handling (iOS/Android): bind directly on each row
-      // Prevent double-trigger with list delegation by stopping propagation.
-      let __openedAt = 0;
-      const __openOnce = () => {
-        const now = Date.now();
-        if (now - __openedAt < 450) return;
-        __openedAt = now;
-        openPatientExisting(p);
-      };
-
-      const __rowHandler = (ev) => {
-        try {
-          if (ev && ev.target && ev.target.closest && ev.target.closest(".patient-geotag")) return;
-          if (ev && ev.stopPropagation) ev.stopPropagation();
-          if (ev && ev.preventDefault) ev.preventDefault();
-          __openOnce();
-        } catch (_) {}
-      };
-
-      // click + pointerup to be resilient in PWA environments
-      row.addEventListener("click", __rowHandler, { passive: false });
-      row.addEventListener("pointerup", __rowHandler, { passive: false });
-
-      const __geo = row.querySelector(".patient-geotag");
-      if (__geo) {
-        const __geoHandler = (ev) => {
-          try {
-            if (ev && ev.stopPropagation) ev.stopPropagation();
-            if (ev && ev.preventDefault) ev.preventDefault();
-            openMapsToPatient(p);
-          } catch (_) {}
-        };
-        __geo.addEventListener("click", __geoHandler, { passive: false });
-        __geo.addEventListener("pointerup", __geoHandler, { passive: false });
-      }
-
       frag.appendChild(row);
     }
     patientsListEl.appendChild(frag);
   }
 
-  // click delegation (una sola listener)
+  // click/touch delegation (robusto iOS/Android)
   if (patientsListEl && !patientsListEl.__delegatedClick) {
     patientsListEl.__delegatedClick = true;
-    patientsListEl.addEventListener("click", (e) => {
-      const geoBtn = e.target && e.target.closest ? e.target.closest(".patient-geotag") : null;
+
+    const handlePatientsActivate = (e) => {
+      const tgt = e && e.target ? e.target : null;
+
+      // Geotag
+      const geoBtn = tgt && tgt.closest ? tgt.closest(".patient-geotag") : null;
       if (geoBtn) {
+        try { e.preventDefault(); } catch (_) {}
+        try { e.stopPropagation(); } catch (_) {}
         const rowG = geoBtn.closest(".patient-row");
         if (!rowG || !patientsListEl.contains(rowG)) return;
         const idxG = parseInt(rowG.dataset.idx || "-1", 10);
@@ -4259,6 +4228,30 @@ function formatItMonth(dateObj) {
         if (pG) openMapsToPatient(pG);
         return;
       }
+
+      // Row tap
+      const row = tgt && tgt.closest ? tgt.closest(".patient-row") : null;
+      if (!row || !patientsListEl.contains(row)) return;
+
+      // IMPORTANT: do NOT preventDefault on row tap (iOS can drop subsequent clicks)
+      const idx = parseInt(row.dataset.idx || "-1", 10);
+      if (idx === -1) { openPatientCreate(); return; }
+      const arr = patientsListEl.__renderedPatients || [];
+      const p = arr[idx];
+      if (p) openPatientExisting(p);
+    };
+
+    // Use capture so we still receive taps if something stops propagation inside the row
+    patientsListEl.addEventListener("click", handlePatientsActivate, { passive: false, capture: true });
+
+    // iOS PWA: touchend is often more reliable than pointer events
+    patientsListEl.addEventListener("touchend", (e) => {
+      // ignore multi-touch / scroll gestures
+      if (e && e.changedTouches && e.changedTouches.length > 1) return;
+      handlePatientsActivate(e);
+    }, { passive: false, capture: true });
+  }
+
 
       const row = e.target && e.target.closest ? e.target.closest(".patient-row") : null;
       if (!row || !patientsListEl.contains(row)) return;
