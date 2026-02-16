@@ -1,7 +1,7 @@
-/* AMF_1.120 */
+/* AMF_1.121 */
 (() => {
-    const BUILD = "AMF_1.120";
-    const DISPLAY = "1.120";
+    const BUILD = "AMF_1.121";
+    const DISPLAY = "1.121";
 
   // --- Helpers
   const $ = (sel) => document.querySelector(sel);
@@ -4204,6 +4204,42 @@ function formatItMonth(dateObj) {
         </button>
       `;
 
+      // Robust tap/click handling (iOS/Android): bind directly on each row
+      // Prevent double-trigger with list delegation by stopping propagation.
+      let __openedAt = 0;
+      const __openOnce = () => {
+        const now = Date.now();
+        if (now - __openedAt < 450) return;
+        __openedAt = now;
+        openPatientExisting(p);
+      };
+
+      const __rowHandler = (ev) => {
+        try {
+          if (ev && ev.target && ev.target.closest && ev.target.closest(".patient-geotag")) return;
+          if (ev && ev.stopPropagation) ev.stopPropagation();
+          if (ev && ev.preventDefault) ev.preventDefault();
+          __openOnce();
+        } catch (_) {}
+      };
+
+      // click + pointerup to be resilient in PWA environments
+      row.addEventListener("click", __rowHandler, { passive: false });
+      row.addEventListener("pointerup", __rowHandler, { passive: false });
+
+      const __geo = row.querySelector(".patient-geotag");
+      if (__geo) {
+        const __geoHandler = (ev) => {
+          try {
+            if (ev && ev.stopPropagation) ev.stopPropagation();
+            if (ev && ev.preventDefault) ev.preventDefault();
+            openMapsToPatient(p);
+          } catch (_) {}
+        };
+        __geo.addEventListener("click", __geoHandler, { passive: false });
+        __geo.addEventListener("pointerup", __geoHandler, { passive: false });
+      }
+
       frag.appendChild(row);
     }
     patientsListEl.appendChild(frag);
@@ -5682,7 +5718,7 @@ async function renderSocietaDeleteList() {
   // PWA (iOS): registra Service Worker
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {
-      navigator.serviceWorker.register("./service-worker.js?v=1.120").catch(() => {});
+      navigator.serviceWorker.register("./service-worker.js?v=1.121").catch(() => {});
     });
   }
 })();
