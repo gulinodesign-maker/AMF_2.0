@@ -1,7 +1,7 @@
-/* AMF_1.119 */
+/* AMF_1.120 */
 (() => {
-    const BUILD = "AMF_1.119";
-    const DISPLAY = "1.119";
+    const BUILD = "AMF_1.120";
+    const DISPLAY = "1.120";
 
   // --- Helpers
   const $ = (sel) => document.querySelector(sel);
@@ -814,10 +814,10 @@ function getStatsMovesCache_() {
 
     // Normalizza shape
     return arr.map((t) => ({
-      livello: normalizeLevel_(t?.livello),
-      data_inizio: String(t?.data_inizio || t?.start || "").trim(),
-      data_fine: String(t?.data_fine || t?.end || "").trim(),
-      giorni_settimana: parseGiorniMap(t?.giorni_settimana || t?.giorni_map || t?.giorni || {})
+      livello: normalizeLevel_((t?.livello ?? t?.l)),
+      data_inizio: String((t?.data_inizio ?? t?.di) || t?.start || "").trim(),
+      data_fine: String((t?.data_fine ?? t?.df) || t?.end || "").trim(),
+      giorni_settimana: parseGiorniMap(t?.giorni_settimana || t?.giorni_map || t?.g || t?.giorni || {})
     }));
   }
 
@@ -837,7 +837,7 @@ function getStatsMovesCache_() {
     let sessions = 0;
 
     for (const t of therapies) {
-      const lv = normalizeLevel_(t?.livello);
+      const lv = normalizeLevel_((t?.livello ?? t?.l));
       if (statsSelectedLevel !== "T" && lv !== statsSelectedLevel) continue;
 
       const range = getPatientRangeWithinYear_({ data_inizio: t?.data_inizio, data_fine: t?.data_fine }, year);
@@ -907,7 +907,7 @@ function getStatsMovesCache_() {
     const therapies0 = getPatientTherapiesForStats_(p);
     const therapies = (statsSelectedLevel === "T")
       ? therapies0.slice()
-      : therapies0.filter((t) => normalizeLevel_(t?.livello) === statsSelectedLevel);
+      : therapies0.filter((t) => normalizeLevel_((t?.livello ?? t?.l)) === statsSelectedLevel);
 
     if (!therapies.length) return 0;
 
@@ -3903,7 +3903,7 @@ function formatItMonth(dateObj) {
       if (!e) return endStr || "";
 
       const map = (() => {
-        try { return parseGiorniMap(t?.giorni_settimana || t?.giorni_map || t?.giorni || {}); } catch (_) { return {}; }
+        try { return parseGiorniMap(t?.giorni_settimana || t?.giorni_map || t?.g || t?.giorni || {}); } catch (_) { return {}; }
       })();
       if (!map || typeof map !== "object") return endStr || "";
 
@@ -4545,6 +4545,15 @@ function formatItMonth(dateObj) {
   }
 
   function normalizeTherapy_(t) {
+    // Supporta formato compatto (i,s,l,di,df,g) oltre al formato esteso legacy.
+    if (src && typeof src === "object") {
+      if (src.l !== undefined && src.livello === undefined) src.livello = src.l;
+      if (src.di !== undefined && src.data_inizio === undefined) src.data_inizio = src.di;
+      if (src.df !== undefined && src.data_fine === undefined) src.data_fine = src.df;
+      if (src.g !== undefined && src.giorni_settimana === undefined && src.giorni_map === undefined) src.giorni_map = src.g;
+      if (src.i !== undefined && src.id === undefined) src.id = src.i;
+      if (src.s !== undefined && src.societa_id === undefined) src.societa_id = src.s;
+    }
     const src = (t && typeof t === "object") ? t : null;
     let id = "";
     if (src) {
@@ -5150,14 +5159,14 @@ $("#btnPatEdit")?.addEventListener("click", () => setPatientFormEnabled(true));
       data_fine: String(t0.data_fine || "").trim(),
       giorni_settimana: JSON.stringify(t0.giorni_map || {}),
 
-      // nuova colonna: terapie (array JSON)
+      // nuova colonna: terapie (array JSON) - formato compatto per evitare limiti URL/JSONP
       terapie: JSON.stringify(therapies.map((t) => ({
-        id: String(t.id || "").trim(),
-        societa_id: String(t.societa_id || societa_id || "").trim(),
-        livello: String(t.livello || "").trim(),
-        data_inizio: String(t.data_inizio || "").trim(),
-        data_fine: String(t.data_fine || "").trim(),
-        giorni_settimana: (t.giorni_map && typeof t.giorni_map === "object") ? t.giorni_map : {}
+        i: String(t.id || "").trim(),
+        s: String(t.societa_id || societa_id || "").trim(),
+        l: String(t.livello || "").trim(),
+        di: String(t.data_inizio || "").trim(),
+        df: String(t.data_fine || "").trim(),
+        g: (t.giorni_map && typeof t.giorni_map === "object") ? t.giorni_map : {}
       }))),
 
       geo_lat: (geo ? geo.lat : ""),
@@ -5673,7 +5682,7 @@ async function renderSocietaDeleteList() {
   // PWA (iOS): registra Service Worker
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {
-      navigator.serviceWorker.register("./service-worker.js?v=1.119").catch(() => {});
+      navigator.serviceWorker.register("./service-worker.js?v=1.120").catch(() => {});
     });
   }
 })();
