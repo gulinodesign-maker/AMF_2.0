@@ -1,7 +1,7 @@
-/* AMF_1.122 */
+/* AMF_1.118 */
 (() => {
-    const BUILD = "AMF_1.122";
-    const DISPLAY = "1.121";
+    const BUILD = "AMF_1.118";
+    const DISPLAY = "1.118";
 
   // --- Helpers
   const $ = (sel) => document.querySelector(sel);
@@ -359,79 +359,15 @@
     });
   }
 
-  // POST API (per payload grandi: evita limiti URL/JSONP su iOS/Android)
-  async function apiPost(action, params) {
-    const base = getApiUrl();
-    if (!base) throw new Error("API_URL_MISSING");
-
-    const bodyObj = Object.assign({ action }, params || {}, { _: Date.now() });
-
-    let res;
-    try {
-      res = await fetch(base, {
-        method: "POST",
-        cache: "no-store",
-        redirect: "follow",
-        mode: "cors",
-        credentials: "omit",
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify(bodyObj)
-      });
-    } catch (e) {
-      throw e;
-    }
-
-    const txt = await res.text().catch(() => "");
-    let data = null;
-    try { data = txt ? JSON.parse(txt) : null; } catch (_) { data = null; }
-
-    if (!data || data.ok !== true) {
-      throw new Error((data && data.error) ? String(data.error) : "Errore API");
-    }
-    return data;
-  }
-
-  function shouldUsePostFor_(action, params) {
-    try {
-      const p = params || {};
-      const url = buildUrl(action, Object.assign({}, p, { _: Date.now() }));
-      const payloadStr = (typeof p.payload === "string") ? p.payload : "";
-      // soglie conservative per evitare troncamenti su Android/iOS
-      if (url.length > 1700) return true;
-      if (payloadStr && payloadStr.length > 1100) return true;
-      return false;
-    } catch (_) {
-      return false;
-    }
-  }
-
-
   async function api(action, params) {
     const base = getApiUrl();
     if (!base) throw new Error("API_URL_MISSING");
 
-    const p = params || {};
-
-    // Se il payload è grande (es. terapie multiple) usa POST per evitare limiti URL/JSONP su Android/iOS.
-    if (shouldUsePostFor_(action, p)) {
-      try {
-        return await apiPost(action, p);
-      } catch (err) {
-        // Se fallisce, non riprovare con GET/JSONP: rischia troncamenti.
-        // Messaggio guidato per capire subito che serve abilitare POST/CORS lato script.
-        const msg = (err && err.message) ? String(err.message) : "";
-        if (msg && /cors|failed to fetch|networkerror|typeerror/i.test(msg)) {
-          throw new Error("Salvataggio troppo grande: abilita POST/CORS nello script");
-        }
-        throw err;
-      }
-    }
-
-    // iOS PWA: JSONP evita blocchi CORS/redirect (fallback a fetch GET se serve)
+    // iOS PWA: JSONP evita blocchi CORS/redirect (fallback a fetch se serve)
     try {
-      return await apiJsonp(action, p);
+      return await apiJsonp(action, params);
     } catch (_) {
-      const url = buildUrl(action, Object.assign({}, p, { _: Date.now() }));
+      const url = buildUrl(action, Object.assign({}, params || {}, { _: Date.now() }));
       const res = await fetch(url, { method: "GET", cache: "no-store" });
       const data = await res.json().catch(() => null);
       if (!data || data.ok !== true) {
@@ -814,10 +750,10 @@ function getStatsMovesCache_() {
 
     // Normalizza shape
     return arr.map((t) => ({
-      livello: normalizeLevel_((t?.livello ?? t?.l)),
-      data_inizio: String((t?.data_inizio ?? t?.di) || t?.start || "").trim(),
-      data_fine: String((t?.data_fine ?? t?.df) || t?.end || "").trim(),
-      giorni_settimana: parseGiorniMap(t?.giorni_settimana || t?.giorni_map || t?.g || t?.giorni || {})
+      livello: normalizeLevel_(t?.livello),
+      data_inizio: String(t?.data_inizio || t?.start || "").trim(),
+      data_fine: String(t?.data_fine || t?.end || "").trim(),
+      giorni_settimana: parseGiorniMap(t?.giorni_settimana || t?.giorni_map || t?.giorni || {})
     }));
   }
 
@@ -837,7 +773,7 @@ function getStatsMovesCache_() {
     let sessions = 0;
 
     for (const t of therapies) {
-      const lv = normalizeLevel_((t?.livello ?? t?.l));
+      const lv = normalizeLevel_(t?.livello);
       if (statsSelectedLevel !== "T" && lv !== statsSelectedLevel) continue;
 
       const range = getPatientRangeWithinYear_({ data_inizio: t?.data_inizio, data_fine: t?.data_fine }, year);
@@ -907,7 +843,7 @@ function getStatsMovesCache_() {
     const therapies0 = getPatientTherapiesForStats_(p);
     const therapies = (statsSelectedLevel === "T")
       ? therapies0.slice()
-      : therapies0.filter((t) => normalizeLevel_((t?.livello ?? t?.l)) === statsSelectedLevel);
+      : therapies0.filter((t) => normalizeLevel_(t?.livello) === statsSelectedLevel);
 
     if (!therapies.length) return 0;
 
@@ -3903,7 +3839,7 @@ function formatItMonth(dateObj) {
       if (!e) return endStr || "";
 
       const map = (() => {
-        try { return parseGiorniMap(t?.giorni_settimana || t?.giorni_map || t?.g || t?.giorni || {}); } catch (_) { return {}; }
+        try { return parseGiorniMap(t?.giorni_settimana || t?.giorni_map || t?.giorni || {}); } catch (_) { return {}; }
       })();
       if (!map || typeof map !== "object") return endStr || "";
 
@@ -4203,23 +4139,18 @@ function formatItMonth(dateObj) {
           </svg>
         </button>
       `;
+
       frag.appendChild(row);
     }
     patientsListEl.appendChild(frag);
   }
 
-  // click/touch delegation (robusto iOS/Android)
+  // click delegation (una sola listener)
   if (patientsListEl && !patientsListEl.__delegatedClick) {
     patientsListEl.__delegatedClick = true;
-
-    const handlePatientsActivate = (e) => {
-      const tgt = e && e.target ? e.target : null;
-
-      // Geotag
-      const geoBtn = tgt && tgt.closest ? tgt.closest(".patient-geotag") : null;
+    patientsListEl.addEventListener("click", (e) => {
+      const geoBtn = e.target && e.target.closest ? e.target.closest(".patient-geotag") : null;
       if (geoBtn) {
-        try { e.preventDefault(); } catch (_) {}
-        try { e.stopPropagation(); } catch (_) {}
         const rowG = geoBtn.closest(".patient-row");
         if (!rowG || !patientsListEl.contains(rowG)) return;
         const idxG = parseInt(rowG.dataset.idx || "-1", 10);
@@ -4228,30 +4159,6 @@ function formatItMonth(dateObj) {
         if (pG) openMapsToPatient(pG);
         return;
       }
-
-      // Row tap
-      const row = tgt && tgt.closest ? tgt.closest(".patient-row") : null;
-      if (!row || !patientsListEl.contains(row)) return;
-
-      // IMPORTANT: do NOT preventDefault on row tap (iOS can drop subsequent clicks)
-      const idx = parseInt(row.dataset.idx || "-1", 10);
-      if (idx === -1) { openPatientCreate(); return; }
-      const arr = patientsListEl.__renderedPatients || [];
-      const p = arr[idx];
-      if (p) openPatientExisting(p);
-    };
-
-    // Use capture so we still receive taps if something stops propagation inside the row
-    patientsListEl.addEventListener("click", handlePatientsActivate, { passive: false, capture: true });
-
-    // iOS PWA: touchend is often more reliable than pointer events
-    patientsListEl.addEventListener("touchend", (e) => {
-      // ignore multi-touch / scroll gestures
-      if (e && e.changedTouches && e.changedTouches.length > 1) return;
-      handlePatientsActivate(e);
-    }, { passive: false, capture: true });
-  }
-
 
       const row = e.target && e.target.closest ? e.target.closest(".patient-row") : null;
       if (!row || !patientsListEl.contains(row)) return;
@@ -4574,15 +4481,6 @@ function formatItMonth(dateObj) {
   }
 
   function normalizeTherapy_(t) {
-    // Supporta formato compatto (i,s,l,di,df,g) oltre al formato esteso legacy.
-    if (src && typeof src === "object") {
-      if (src.l !== undefined && src.livello === undefined) src.livello = src.l;
-      if (src.di !== undefined && src.data_inizio === undefined) src.data_inizio = src.di;
-      if (src.df !== undefined && src.data_fine === undefined) src.data_fine = src.df;
-      if (src.g !== undefined && src.giorni_settimana === undefined && src.giorni_map === undefined) src.giorni_map = src.g;
-      if (src.i !== undefined && src.id === undefined) src.id = src.i;
-      if (src.s !== undefined && src.societa_id === undefined) src.societa_id = src.s;
-    }
     const src = (t && typeof t === "object") ? t : null;
     let id = "";
     if (src) {
@@ -5188,14 +5086,14 @@ $("#btnPatEdit")?.addEventListener("click", () => setPatientFormEnabled(true));
       data_fine: String(t0.data_fine || "").trim(),
       giorni_settimana: JSON.stringify(t0.giorni_map || {}),
 
-      // nuova colonna: terapie (array JSON) - formato compatto per evitare limiti URL/JSONP
+      // nuova colonna: terapie (array JSON)
       terapie: JSON.stringify(therapies.map((t) => ({
-        i: String(t.id || "").trim(),
-        s: String(t.societa_id || societa_id || "").trim(),
-        l: String(t.livello || "").trim(),
-        di: String(t.data_inizio || "").trim(),
-        df: String(t.data_fine || "").trim(),
-        g: (t.giorni_map && typeof t.giorni_map === "object") ? t.giorni_map : {}
+        id: String(t.id || "").trim(),
+        societa_id: String(t.societa_id || societa_id || "").trim(),
+        livello: String(t.livello || "").trim(),
+        data_inizio: String(t.data_inizio || "").trim(),
+        data_fine: String(t.data_fine || "").trim(),
+        giorni_settimana: (t.giorni_map && typeof t.giorni_map === "object") ? t.giorni_map : {}
       }))),
 
       geo_lat: (geo ? geo.lat : ""),
@@ -5711,7 +5609,7 @@ async function renderSocietaDeleteList() {
   // PWA (iOS): registra Service Worker
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {
-      navigator.serviceWorker.register("./service-worker.js?v=1.121").catch(() => {});
+      navigator.serviceWorker.register("./service-worker.js?v=1.118").catch(() => {});
     });
   }
 })();
