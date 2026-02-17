@@ -1,7 +1,7 @@
-/* AMF_1.120 */
+/* AMF_1.121 */
 (() => {
-    const BUILD = "AMF_1.120";
-    const DISPLAY = "1.120";
+    const BUILD = "AMF_1.121";
+    const DISPLAY = "1.121";
 
   // --- Helpers
   const $ = (sel) => document.querySelector(sel);
@@ -3232,19 +3232,48 @@ const therapyEl = $("#moveSessionTherapyName");
     }
 
     if (timeEl) {
-      try {
-        const minT = Array.isArray(calHours) && calHours.length ? calHours[0] : "07:30";
-        const maxT = Array.isArray(calHours) && calHours.length ? calHours[calHours.length - 1] : "21:00";
-        timeEl.min = minT;
-        timeEl.max = maxT;
-        timeEl.step = "1800";
-      } catch (_) {}
+      // iOS: evita il time picker nativo (non rispetta sempre step). Selezione tramite modal con slot a mezz'ora.
+      try { timeEl.readOnly = true; } catch (_) {}
       try { timeEl.value = fromTime; } catch (_) {}
     }
 
     modal.classList.add("show");
     modal.setAttribute("aria-hidden", "false");
     try { dateEl && dateEl.focus && dateEl.focus(); } catch (_) {}
+  }
+
+  function openTimePickerForMoveSession_() {
+    if (!moveSessionModalState) return;
+    if (!timePickList) return;
+    const timeEl = $("#moveSessionTime");
+    if (!timeEl) return;
+
+    const currentSel = normTime(String(timeEl.value || "").trim()) || normTime(moveSessionModalState.fromTime || "");
+
+    timePickList.innerHTML = "";
+    const list = Array.isArray(calHours) && calHours.length ? calHours.slice() : ["07:30","08:00","08:30","09:00","09:30","10:00","10:30","11:00","11:30","12:00","12:30","13:00","13:30","14:00","14:30","15:00","15:30","16:00","16:30","17:00","17:30","18:00","18:30","19:00","19:30","20:00","20:30","21:00"];
+
+    list.forEach((t) => {
+      const tt = normTime(t);
+      if (!tt) return;
+      const btn = document.createElement("button");
+      btn.type = "button";
+      let cls = "pill-btn";
+      if (tt === currentSel) cls += " selected";
+      btn.className = cls;
+      btn.textContent = tt;
+      btn.addEventListener("click", () => {
+        try {
+          timePickList.querySelectorAll(".pill-btn.selected").forEach((el) => el.classList.remove("selected"));
+          btn.classList.add("selected");
+        } catch (_) {}
+        try { timeEl.value = tt; } catch (_) {}
+        closePickTimeModal();
+      });
+      timePickList.appendChild(btn);
+    });
+
+    openPickTimeModal();
   }
 
   function closeMoveSessionModal_() {
@@ -3336,6 +3365,22 @@ const therapyEl = $("#moveSessionTherapyName");
     $("#btnMoveSessionCancel")?.addEventListener("click", closeMoveSessionModal_);
     $("#btnMoveSessionConfirm")?.addEventListener("click", () => { void confirmMoveSessionModal_(); });
     modal.addEventListener("click", (e) => { if (e.target === modal) closeMoveSessionModal_(); });
+
+    const timeEl = $("#moveSessionTime");
+    if (timeEl) {
+      const open = (e) => {
+        try { e && e.preventDefault && e.preventDefault(); } catch (_) {}
+        try { e && e.stopPropagation && e.stopPropagation(); } catch (_) {}
+        openTimePickerForMoveSession_();
+        try { timeEl.blur && timeEl.blur(); } catch (_) {}
+      };
+      timeEl.addEventListener("click", open);
+      timeEl.addEventListener("focus", open);
+      timeEl.addEventListener("keydown", (e) => {
+        const k = e && e.key ? e.key : "";
+        if (k === "Enter" || k === " ") open(e);
+      });
+    }
   })();
 
 function scrollCalendarToNow() {
@@ -5625,7 +5670,7 @@ async function renderSocietaDeleteList() {
   // PWA (iOS): registra Service Worker
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {
-      navigator.serviceWorker.register("./service-worker.js?v=1.120").catch(() => {});
+      navigator.serviceWorker.register("./service-worker.js?v=1.121").catch(() => {});
     });
   }
 })();
