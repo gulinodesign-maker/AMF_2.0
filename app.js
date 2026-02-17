@@ -1,7 +1,7 @@
-/* AMF_1.119 */
+/* AMF_1.120 */
 (() => {
-    const BUILD = "AMF_1.119";
-    const DISPLAY = "1.119";
+    const BUILD = "AMF_1.120";
+    const DISPLAY = "1.120";
 
   // --- Helpers
   const $ = (sel) => document.querySelector(sel);
@@ -364,9 +364,11 @@
     if (!base) throw new Error("API_URL_MISSING");
 
     // iOS PWA: JSONP evita blocchi CORS/redirect (fallback a fetch se serve)
-    try {
-      return await apiJsonp(action, params);
-    } catch (_) {
+    // Android/altro: evita JSONP (su alcuni device resta in timeout ~12s) e usa subito fetch
+    const ua = (navigator && navigator.userAgent) ? String(navigator.userAgent) : "";
+    const isIOS = /iPad|iPhone|iPod/i.test(ua) || ((navigator && navigator.platform === "MacIntel") && (navigator.maxTouchPoints && navigator.maxTouchPoints > 1));
+
+    const fetchOnce = async () => {
       const url = buildUrl(action, Object.assign({}, params || {}, { _: Date.now() }));
       const res = await fetch(url, { method: "GET", cache: "no-store" });
       const data = await res.json().catch(() => null);
@@ -374,6 +376,16 @@
         throw new Error((data && data.error) ? String(data.error) : "Errore API");
       }
       return data;
+    };
+
+    if (!isIOS) {
+      return await fetchOnce();
+    }
+
+    try {
+      return await apiJsonp(action, params);
+    } catch (_) {
+      return await fetchOnce();
     }
   }
 
@@ -5613,7 +5625,7 @@ async function renderSocietaDeleteList() {
   // PWA (iOS): registra Service Worker
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {
-      navigator.serviceWorker.register("./service-worker.js?v=1.119").catch(() => {});
+      navigator.serviceWorker.register("./service-worker.js?v=1.120").catch(() => {});
     });
   }
 })();
