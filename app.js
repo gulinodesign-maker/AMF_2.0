@@ -1,7 +1,7 @@
-/* AMF_1.122 */
+/* AMF_1.123 */
 (() => {
-    const BUILD = "AMF_1.122";
-    const DISPLAY = "1.122";
+    const BUILD = "AMF_1.123";
+    const DISPLAY = "1.123";
 
   // --- Helpers
   const $ = (sel) => document.querySelector(sel);
@@ -5081,6 +5081,18 @@ $("#btnPatEdit")?.addEventListener("click", () => setPatientFormEnabled(true));
     ensureCurrentTherapies_();
     const therapies = (currentPatient && Array.isArray(currentPatient.terapie_arr)) ? currentPatient.terapie_arr.map(normalizeTherapy_) : [normalizeTherapy_({})];
 
+    // Se cambia la società del paziente, la nuova società deve propagarsi a tutte le terapie
+    try {
+      therapies.forEach((t) => { if (t && typeof t === "object") t.societa_id = String(societa_id || "").trim(); });
+      if (currentPatient && typeof currentPatient === "object") {
+        currentPatient.societa_id = String(societa_id || "").trim();
+        currentPatient.societa_nome = String(societa_nome || societa || "").trim();
+        currentPatient.societa = String(societa || "").trim();
+        currentPatient.terapie_arr = therapies;
+      }
+    } catch (_) {}
+
+
     // Validazioni base
     for (let i = 0; i < therapies.length; i++) {
       const th = therapies[i] || {};
@@ -5149,7 +5161,7 @@ $("#btnPatEdit")?.addEventListener("click", () => setPatientFormEnabled(true));
       // nuova colonna: terapie (array JSON)
       terapie: JSON.stringify(therapies.map((t) => ({
         id: String(t.id || "").trim(),
-        societa_id: String(t.societa_id || societa_id || "").trim(),
+        societa_id: String(societa_id || "").trim(),
         livello: String(t.livello || "").trim(),
         data_inizio: String(t.data_inizio || "").trim(),
         data_fine: String(t.data_fine || "").trim(),
