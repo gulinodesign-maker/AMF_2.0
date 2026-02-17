@@ -1,7 +1,7 @@
-/* AMF_1.118 */
+/* AMF_1.119 */
 (() => {
-    const BUILD = "AMF_1.118";
-    const DISPLAY = "1.118";
+    const BUILD = "AMF_1.119";
+    const DISPLAY = "1.119";
 
   // --- Helpers
   const $ = (sel) => document.querySelector(sel);
@@ -4264,9 +4264,9 @@ function formatItMonth(dateObj) {
     try { window.open(url, "_blank"); } catch { try { location.href = url; } catch {} }
   }
 
-  async function acquireGeoOnce() {
+  async function acquireGeoOnce(optsOverride) {
     if (!("geolocation" in navigator)) return null;
-    const opts = { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 };
+    const opts = Object.assign({ enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }, (optsOverride || {}));
     try {
       return await new Promise((resolve) => {
         try {
@@ -5009,6 +5009,8 @@ $("#btnPatEdit")?.addEventListener("click", () => setPatientFormEnabled(true));
     const user = getSession();
     if (!user) { toast("Devi accedere"); return; }
 
+    toast("Salvataggio...");
+
     const nome_cognome = ($("#patName")?.value || "").trim();
     const address = ($("#patAddress")?.value || "").trim();
     const societa = ($("#patSoc")?.value || "").trim();
@@ -5067,8 +5069,9 @@ $("#btnPatEdit")?.addEventListener("click", () => setPatientFormEnabled(true));
     // Geotag automatico (scrittura/modifica): tenta acquisizione senza tasto dedicato
     let geo = null;
     try {
-      toast("Acquisizione posizione...");
-      geo = await acquireGeoOnce();
+      const ua = (navigator && navigator.userAgent) ? String(navigator.userAgent) : "";
+      const isAndroid = /Android/i.test(ua);
+      geo = await acquireGeoOnce(isAndroid ? { enableHighAccuracy: false, timeout: 2500, maximumAge: 60000 } : null);
     } catch (_) { geo = null; }
 
     const t0 = therapies[0] || normalizeTherapy_({});
@@ -5112,6 +5115,7 @@ $("#btnPatEdit")?.addEventListener("click", () => setPatientFormEnabled(true));
       } else {
         await api("createPatient", { userId: user.id, payload: JSON.stringify(payload) });
       }
+      invalidateApiCache("listPatients");
       toast("Salvato");
       await openPatientsAfterLogin();
     } catch (err) {
@@ -5609,7 +5613,7 @@ async function renderSocietaDeleteList() {
   // PWA (iOS): registra Service Worker
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {
-      navigator.serviceWorker.register("./service-worker.js?v=1.118").catch(() => {});
+      navigator.serviceWorker.register("./service-worker.js?v=1.119").catch(() => {});
     });
   }
 })();
