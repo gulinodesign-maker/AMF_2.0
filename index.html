@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Montalto PMS</title>
-  <link rel="stylesheet" href="./styles.css?v=1.127" />
+  <link rel="stylesheet" href="./styles.css?v=1.128" />
   <link rel="manifest" href="./manifest.json" />
   <meta name="theme-color" content="#2a74b8" />
   <link rel="apple-touch-icon" href="./assets/apple-touch-icon.png" />
@@ -336,7 +336,33 @@
     
     
 
-    <!-- MODAL: Sposta seduta -->
+    
+    <!-- MODAL: Aggiungi seduta (press 0.5s su cella vuota) -->
+    <div class="modal" id="modalAddSession" aria-hidden="true">
+      <div class="modal-card">
+        <div class="modal-title">Aggiungi seduta</div>
+
+        <div class="label">Paziente</div>
+        <div class="pill-wide pill-tab">
+          <select class="pill-tab-input" id="addSessionPatient" aria-label="Seleziona paziente"></select>
+        </div>
+
+        <div class="label">Terapia / Proroga</div>
+        <div class="pill-wide pill-tab">
+          <select class="pill-tab-input" id="addSessionTherapy" aria-label="Seleziona terapia"></select>
+        </div>
+
+        <div class="label">Slot</div>
+        <div class="pill-wide" id="addSessionWhen" aria-label="Data e ora"></div>
+
+        <div class="row2">
+          <button class="pill-btn pill-gray" type="button" id="btnAddSessionCancel">annulla</button>
+          <button class="pill-btn pill-blue" type="button" id="btnAddSessionConfirm">aggiungi</button>
+        </div>
+      </div>
+    </div>
+
+<!-- MODAL: Sposta seduta -->
     <div class="modal" id="modalMoveSession" aria-hidden="true">
       <div class="modal-card">
         <div class="modal-title">Sposta seduta</div>
@@ -499,6 +525,6 @@
     </div>
 
   <script src="./config.js"></script>
-  <script src="./app.js?v=1.127"></script>
+  <script src="./app.js?v=1.128"></script>
 </body>
 </html>

@@ -1,7 +1,7 @@
-/* AMF_1.127 */
+/* AMF_1.128 */
 (() => {
-    const BUILD = "AMF_1.127";
-    const DISPLAY = "1.127";
+    const BUILD = "AMF_1.128";
+    const DISPLAY = "1.128";
 
   // --- Helpers
   const $ = (sel) => document.querySelector(sel);
@@ -3365,6 +3365,23 @@ const therapyEl = $("#moveSessionTherapyName");
     $("#btnMoveSessionCancel")?.addEventListener("click", closeMoveSessionModal_);
     $("#btnMoveSessionConfirm")?.addEventListener("click", () => { void confirmMoveSessionModal_(); });
     modal.addEventListener("click", (e) => { if (e.target === modal) closeMoveSessionModal_(); });
+
+    // Modal aggiungi seduta
+    const modalAdd = $("#modalAddSession");
+    if (modalAdd) {
+      $("#btnAddSessionCancel")?.addEventListener("click", closeAddSessionModal_);
+      $("#btnAddSessionConfirm")?.addEventListener("click", () => { void confirmAddSessionModal_(); });
+      modalAdd.addEventListener("click", (e) => { if (e.target === modalAdd) closeAddSessionModal_(); });
+
+      $("#addSessionPatient")?.addEventListener("change", () => {
+        try {
+          const pid = String($("#addSessionPatient")?.value || "").trim();
+          const ymd = addSessionModalState ? addSessionModalState.ymd : "";
+          fillAddSessionTherapies_(pid, ymd);
+        } catch (_) {}
+      });
+    }
+
 
     const timeEl = $("#moveSessionTime");
     if (timeEl) {
