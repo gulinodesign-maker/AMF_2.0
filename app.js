@@ -1,7 +1,7 @@
-/* AMF_1.128 */
+/* AMF_1.129 */
 (() => {
-    const BUILD = "AMF_1.128";
-    const DISPLAY = "1.128";
+    const BUILD = "AMF_1.129";
+    const DISPLAY = "1.129";
 
   // --- Helpers
   const $ = (sel) => document.querySelector(sel);
@@ -3510,6 +3510,12 @@ function formatItMonth(dateObj) {
     el.addEventListener("mousedown", unlock, { passive: true });
     el.addEventListener("pointerdown", unlock, { passive: true });
   }
+  // iOS: prevenzione autofill aggressivo (readonly sbloccato al focus)
+  if (typeof isIOS !== "undefined" && isIOS) {
+    try { $("#loginNome")?.setAttribute("readonly", ""); } catch (_) {}
+    try { $("#modNome")?.setAttribute("readonly", ""); } catch (_) {}
+  }
+
   bindReadonlyUnlock($("#loginNome"));
   bindReadonlyUnlock($("#modNome"));
   bindReadonlyUnlock($("#createNome"));
