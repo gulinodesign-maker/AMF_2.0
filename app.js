@@ -1,7 +1,7 @@
-/* AMF_1.124 */
+/* AMF_1.125 */
 (() => {
-    const BUILD = "AMF_1.124";
-    const DISPLAY = "1.124";
+    const BUILD = "AMF_1.125";
+    const DISPLAY = "1.125";
 
   // --- Helpers
   const $ = (sel) => document.querySelector(sel);
@@ -3885,53 +3885,9 @@ function formatItMonth(dateObj) {
       if (e && (!acc.maxEnd || e.getTime() > acc.maxEnd.getTime())) acc.maxEnd = e;
     };
 
-    // Scadenza = data più lontana del calendario effettivo:
-    // - base: ultima occorrenza compatibile con giorni/orari tra data_inizio e data_fine
-    // - non usa più il foglio "sedute" per calcolare la scadenza (richiesta: scadenza da calendario)
-    const effectiveEndForTherapy_ = (t, legacyEnd) => {
-      const startStr = (t && (t.data_inizio ?? t.da ?? t.start)) || (p && (p.data_inizio ?? p.start)) || "";
-      const endStr = (t && (t.data_fine ?? t.a ?? t.end)) || legacyEnd || (p && (p.data_fine ?? p.end)) || "";
-      const s = dateOnlyLocal(startStr);
-      const e = dateOnlyLocal(endStr);
-      if (!e) return endStr || "";
-
-      const map = (() => {
-        try { return parseGiorniMap(t?.giorni_settimana || t?.giorni_map || t?.giorni || {}); } catch (_) { return {}; }
-      })();
-      if (!map || typeof map !== "object") return endStr || "";
-
-      // weekday attivi con almeno un orario
-      const active = new Set();
-      Object.keys(map).forEach((k) => {
-        const dayLabel = __normDayLabel(k);
-        let wk = DAY_LABEL_TO_KEY[dayLabel];
-        if (wk == null && /^\d+$/.test(dayLabel)) {
-          const n = parseInt(dayLabel, 10);
-          if (n === 7) wk = 0;
-          else if (n >= 0 && n <= 6) wk = n;
-          else if (n >= 1 && n <= 6) wk = n;
-        }
-        if (wk == null) return;
-        const times = normalizeTimeList(map[k]);
-        if (!times.length) return;
-        active.add(wk);
-      });
-
-      if (!active.size) return endStr || "";
-
-      // Cerca l'ultima data (entro 14gg) che cade su un weekday attivo
-      const d = new Date(e);
-      d.setHours(0,0,0,0);
-      const minTs = s ? (new Date(s.setHours(0,0,0,0))).getTime() : -Infinity;
-
-      for (let k = 0; k < 14; k++) {
-        if (d.getTime() < minTs) break;
-        if (active.has(d.getDay())) return ymdLocal(d);
-        d.setDate(d.getDate() - 1);
-      }
-      return endStr || "";
-    };
-
+    // Scadenza (semplificata):
+    // - letta SOLO dalla card paziente (terapie) senza calcoli calendario / giorni / orari.
+    // - se ci sono più terapie, usa la data_fine più avanti (max).
     const acc = { minStart: null, maxEnd: null };
 
     // 1) Terapie (preferito)
@@ -3941,7 +3897,7 @@ function formatItMonth(dateObj) {
     if (Array.isArray(therapies) && therapies.length) {
       for (const t of therapies) {
         const sStr = t?.data_inizio ?? t?.da ?? t?.start ?? "";
-        const eStr = effectiveEndForTherapy_(t, t?.data_fine ?? t?.a ?? t?.end ?? "");
+        const eStr = t?.data_fine ?? t?.a ?? t?.end ?? "";
         consider(sStr, eStr, acc);
       }
     }
@@ -3954,16 +3910,6 @@ function formatItMonth(dateObj) {
       if (!acc.maxEnd) consider("", p?.data_fine ?? p?.end ?? "", acc);
     }
 
-    // 3) Override scadenza con la data più lontana trovata nel CALENDARIO reale (spostamenti/add)
-    try {
-      const pid = p && p.id != null ? String(p.id) : "";
-      const mvTs = pid ? (calMovesMaxTsByPatient.get(pid) || 0) : 0;
-      if (mvTs) {
-        const d = new Date(mvTs);
-        d.setHours(0, 0, 0, 0);
-        if (!acc.maxEnd || d.getTime() > acc.maxEnd.getTime()) acc.maxEnd = d;
-      }
-    } catch (_) {}
     return {
       start: acc.minStart,
       end: acc.maxEnd,
@@ -4782,7 +4728,7 @@ function formatItMonth(dateObj) {
 
       const title = document.createElement("div");
       title.className = "therapy-title";
-      title.textContent = `Terapia ${i + 1}`;
+      title.textContent = (i === 0) ? "Terapia" : `Proroga ${i}`;
 
       const del = document.createElement("button");
       del.type = "button";
