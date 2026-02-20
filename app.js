@@ -1,7 +1,7 @@
-/* AMF_1.129 */
+/* AMF_1.127 */
 (() => {
-    const BUILD = "AMF_1.129";
-    const DISPLAY = "1.129";
+    const BUILD = "AMF_1.127";
+    const DISPLAY = "1.127";
 
   // --- Helpers
   const $ = (sel) => document.querySelector(sel);
@@ -3366,23 +3366,6 @@ const therapyEl = $("#moveSessionTherapyName");
     $("#btnMoveSessionConfirm")?.addEventListener("click", () => { void confirmMoveSessionModal_(); });
     modal.addEventListener("click", (e) => { if (e.target === modal) closeMoveSessionModal_(); });
 
-    // Modal aggiungi seduta
-    const modalAdd = $("#modalAddSession");
-    if (modalAdd) {
-      $("#btnAddSessionCancel")?.addEventListener("click", closeAddSessionModal_);
-      $("#btnAddSessionConfirm")?.addEventListener("click", () => { void confirmAddSessionModal_(); });
-      modalAdd.addEventListener("click", (e) => { if (e.target === modalAdd) closeAddSessionModal_(); });
-
-      $("#addSessionPatient")?.addEventListener("change", () => {
-        try {
-          const pid = String($("#addSessionPatient")?.value || "").trim();
-          const ymd = addSessionModalState ? addSessionModalState.ymd : "";
-          fillAddSessionTherapies_(pid, ymd);
-        } catch (_) {}
-      });
-    }
-
-
     const timeEl = $("#moveSessionTime");
     if (timeEl) {
       const open = (e) => {
@@ -3510,12 +3493,6 @@ function formatItMonth(dateObj) {
     el.addEventListener("mousedown", unlock, { passive: true });
     el.addEventListener("pointerdown", unlock, { passive: true });
   }
-  // iOS: prevenzione autofill aggressivo (readonly sbloccato al focus)
-  if (typeof isIOS !== "undefined" && isIOS) {
-    try { $("#loginNome")?.setAttribute("readonly", ""); } catch (_) {}
-    try { $("#modNome")?.setAttribute("readonly", ""); } catch (_) {}
-  }
-
   bindReadonlyUnlock($("#loginNome"));
   bindReadonlyUnlock($("#modNome"));
   bindReadonlyUnlock($("#createNome"));

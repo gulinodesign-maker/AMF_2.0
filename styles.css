@@ -1,4 +1,4 @@
-/* AMF_1.129 */
+/* AMF_1.127 */
 /* Montalto PMS - PWA iOS / GitHub Pages */
 :root{
   --text: #1b1f23;
@@ -2120,10 +2120,3 @@ body.cal-dragging { touch-action: none; }
   display:none;
 }
 
-
-select.pill-tab-input{
-  -webkit-appearance:none;
-  appearance:none;
-  background:transparent;
-}
-select.pill-tab-input:focus{ outline:none; }
