@@ -1,504 +1,1547 @@
-<!doctype html>
+<!DOCTYPE html>
+
 <html lang="it">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Montalto PMS</title>
-  <link rel="stylesheet" href="./styles.css?v=1.127" />
-  <link rel="manifest" href="./manifest.json" />
-  <meta name="theme-color" content="#2a74b8" />
-  <link rel="apple-touch-icon" href="./assets/apple-touch-icon.png" />
+<meta charset="utf-8"/>
+<meta content="width=device-width,initial-scale=1, viewport-fit=cover" name="viewport"/>
+<title>Daedalium PMS</title>
+<meta content="no-cache, no-store, must-revalidate" http-equiv="Cache-Control"/>
+<meta content="no-cache" http-equiv="Pragma"/>
+<meta content="0" http-equiv="Expires"/>
+<link href="./styles.css?v=dDAE_2.205" rel="stylesheet"/>
+<link href="./manifest.json?v=dDAE_2.205" rel="manifest"/>
+<link href="./assets/icons/apple-touch-icon.png?v=dDAE_2.205" rel="apple-touch-icon" sizes="180x180"/>
+<link href="./assets/icons/apple-touch-icon.png?v=dDAE_2.205" rel="apple-touch-icon-precomposed" sizes="180x180"/>
+<link href="./assets/icons/favicon-32.png?v=dDAE_2.205" rel="icon" sizes="32x32" type="image/png"/>
+<link href="./assets/icons/favicon-16.png?v=dDAE_2.205" rel="icon" sizes="16x16" type="image/png"/>
+<meta content="#ffffff" name="theme-color"/>
+<meta content="yes" name="apple-mobile-web-app-capable"/>
+<meta content="Daedalium PMS" name="apple-mobile-web-app-title"/>
+<meta content="default" name="apple-mobile-web-app-status-bar-style"/>
 </head>
 <body>
-  <header class="topbar">
-    <div class="topbar-left">
-      <img class="logo" src="./assets/logo.jpg" alt="Logo" onerror="this.style.display='none'" />
-      <div class="brand">
-        <div class="brand-title" id="topbarTitle">Montalto PMS</div>
-      </div>
-    </div>
-
-    <div class="topbar-right">
-      <button class="icon-btn" id="btnTopPlus" aria-label="Aggiungi" hidden>
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M12 5v14"></path>
-          <path d="M5 12h14"></path>
-        </svg>
-      </button>
-<!-- In Home: mostra Impostazioni. Fuori dalla Home: mostra Home -->
-      <button class="icon-btn" id="btnTopRight" aria-label="Impostazioni">
-      <svg id="iconTopRight" viewBox="0 0 24 24" aria-hidden="true">
-        <!-- settings icon (default) -->
-        <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z">
-        </path>
-        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1Z">
-        </path>
-      </svg>
-    </button>
-    </div>
-  </header>
-
-  <main class="main">
-    <!-- HOME -->
-    <section class="view" id="viewHome" aria-label="Home">
-      <div class="home-layout">
-        <div class="home-center" aria-label="Home">
-          <section class="grid" aria-label="Home">
-        <button class="nav-btn" data-route="pazienti" aria-label="Pazienti">
-          <div class="app-icon" aria-hidden="true">
-            <svg class="nav-ic" viewBox="0 0 24 24">
-              <path d="M20 21a8 8 0 1 0-16 0"></path>
-              <path d="M12 13a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"></path>
-            </svg>
-          </div>
-          <div class="nav-label">Pazienti</div>
-        </button>
-
-        <button class="nav-btn" data-route="calendario" aria-label="Calendario">
-          <div class="app-icon" aria-hidden="true">
-            <svg class="nav-ic" viewBox="0 0 24 24">
-              <path d="M8 2v3"></path>
-              <path d="M16 2v3"></path>
-              <path d="M3 9h18"></path>
-              <path d="M5 5h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Z"></path>
-              <path d="M8 13h.01"></path><path d="M12 13h.01"></path><path d="M16 13h.01"></path>
-              <path d="M8 17h.01"></path><path d="M12 17h.01"></path><path d="M16 17h.01"></path>
-            </svg>
-          </div>
-          <div class="nav-label">Calendario</div>
-        </button>
-
-        <button class="nav-btn" data-route="statistiche" aria-label="Statistiche">
-          <div class="app-icon" aria-hidden="true">
-            <svg class="nav-ic" viewBox="0 0 24 24">
-              <path d="M4 19V5"></path>
-              <path d="M4 19h16"></path>
-              <path d="M8 16v-6"></path>
-              <path d="M12 16v-9"></path>
-              <path d="M16 16v-3"></path>
-            </svg>
-          </div>
-          <div class="nav-label">Statistiche</div>
-        </button>
-      </section>
-        </div>
-        <div class="home-footer" aria-label="Build">
-          <div class="build" id="buildLabel">1.125</div>
-        </div>
-      </div>
-    </section>
-
-    <!-- AUTH: landing con 3 tasti verticali -->
-    <section class="view active" id="viewAuth" aria-label="Accesso">
-      <div class="card">
-        <img class="card-logo" src="./assets/logo.jpg" alt="Logo" />
-        <div class="stack">
-          <button class="pill-btn pill-blue" id="btnGoCreate">crea account</button>
-          <button class="pill-btn pill-gray" id="btnGoModify">modifica account</button>
-          <button class="pill-btn pill-green" id="btnGoLogin">login</button>
-        </div>
-      </div>
-    </section>
-
-    <!-- CREA ACCOUNT -->
-    <section class="view" id="viewCreate" aria-label="Crea account">
-      <div class="card card-form">
-        <img class="card-logo" src="./assets/logo.jpg" alt="Logo" />
-        <form class="form" id="formCreate" autocomplete="off">
-          <input class="field" id="createNome" type="text" placeholder="Nome fisioterapista" autocomplete="off" required autocapitalize="none" autocorrect="off" spellcheck="false" />
-          <input class="field" id="createPass" type="password" placeholder="Password" autocomplete="new-password" required autocapitalize="none" autocorrect="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true" />
-          <input class="field" id="createPass2" type="password" placeholder="Conferma password" autocomplete="new-password" required autocapitalize="none" autocorrect="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true" />
-          <div class="row2">
-            <button class="pill-btn pill-gray" type="button" id="btnCreateBack">indietro</button>
-            <button class="pill-btn pill-blue" type="submit">crea account</button>
-          </div>
-        </form>
-      </div>
-    </section>
-
-    <!-- LOGIN -->
-    <section class="view" id="viewLogin" aria-label="Login">
-      <div class="card card-form">
-        <img class="card-logo" src="./assets/logo.jpg" alt="Logo" />
-        <form class="form" id="formLogin" autocomplete="off">
-          <input class="field" id="loginNome" type="text" placeholder="Nome" autocomplete="off" required autocapitalize="none" autocorrect="off" spellcheck="false" inputmode="text" data-lpignore="true" data-1p-ignore="true" readonly />
-          <input class="field" id="loginPass" type="password" placeholder="Password" autocomplete="new-password" required autocapitalize="none" autocorrect="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true" />
-          <div class="row2">
-            <button class="pill-btn pill-gray" type="button" id="btnLoginBack">indietro</button>
-            <button class="pill-btn pill-green" type="submit">login</button>
-          </div>
-        </form>
-      </div>
-    </section>
-
-    <!-- MODIFICA ACCOUNT -->
-    <section class="view" id="viewModify" aria-label="Modifica account">
-      <div class="card card-form">
-        <img class="card-logo" src="./assets/logo.jpg" alt="Logo" />
-        <form class="form" id="formModify" autocomplete="off">
-          <input class="field" id="modNome" type="text" placeholder="Nome" autocomplete="off" required autocapitalize="none" autocorrect="off" spellcheck="false" inputmode="text" data-lpignore="true" data-1p-ignore="true" readonly />
-          <input class="field" id="modOld" type="password" placeholder="Password attuale" autocomplete="new-password" required autocapitalize="none" autocorrect="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true" />
-          <input class="field" id="modNew" type="password" placeholder="Nuova password" autocomplete="new-password" required autocapitalize="none" autocorrect="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true" />
-          <input class="field" id="modNew2" type="password" placeholder="Conferma nuova password" autocomplete="new-password" required autocapitalize="none" autocorrect="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true" />
-          <div class="row2">
-            <button class="pill-btn pill-gray" type="button" id="btnModBack">indietro</button>
-            <button class="pill-btn pill-blue" type="submit">salva</button>
-          </div>
-        </form>
-      </div>
-    </section>
-
-    <!-- IMPOSTAZIONI -->
-    <section class="view" id="viewSettings" aria-label="Impostazioni">
-      <div class="page">
-        <div class="page-header">
-          <div class="page-title">Impostazioni</div>
-        </div>
-
-        <div class="pill-row">
-          <div class="pill-wide" id="pillUser">—</div>
-          <div class="pill-wide" id="pillYear">—</div>
-        </div>
-
-        <div class="settings-form">
-          <label class="label">Anno di esercizio</label>
-          <input class="field" id="setAnno" type="number" inputmode="numeric" placeholder="Anno di esercizio" />
+<header class="topbar">
+<div class="brand">
+<div class="brand-left">
+<img alt="Daedalium logo" class="logo" src="./assets/logo.jpg?v=dDAE_2.205"/>
+<div class="top-led-grid" id="topLedGrid" aria-label="Stato" role="status">
+  <span aria-label="Spesa colazione" class="top-led top-led-blue" id="prodLedColazione"></span>
+  <span aria-label="Spesa prodotti" class="top-led top-led-orange" id="prodLedPulizia"></span>
+  <span aria-label="Lettura database" class="top-led top-led-green" id="dbLedRead"></span>
+  <span aria-label="Scrittura database" class="top-led top-led-red" id="dbLedWrite"></span>
+</div>
+<h1>Daedalium PMS</h1>
+</div>
+<div class="brand-right">
+<button aria-label="Indietro" class="icon-btn icon-btn-whiteorange" hidden="" id="backBtnTop" type="button"><span aria-hidden="true" class="backchev"><svg aria-hidden="true" class="ui-ico" viewbox="0 0 24 24"><path d="M15 18l-6-6 6-6"></path><path d="M9 12h12"></path></svg></span></button><div hidden="" id="pulizieTopTools">
+<button aria-label="Ore lavoro pulizie" class="icon-btn icon-btn-whiteorange" id="goOrePuliziaTop" type="button">
+<svg aria-hidden="true" class="ui-ico" viewbox="0 0 24 24">
+<path d="M12 8v5l3 2"></path>
+<path d="M12 22a10 10 0 1 0-10-10 10 10 0 0 0 10 10Z"></path>
+</svg>
+</button>
+<button aria-label="Report lavanderia" class="icon-btn icon-btn-whiteblue" id="goLavanderiaTop" type="button">
+<svg aria-hidden="true" class="ui-ico" viewbox="0 0 24 24">
+<path d="M8 2h8"></path>
+<path d="M7 6h10"></path>
+<path d="M6 6v14a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V6"></path>
+<path d="M9 12a3 3 0 1 0 6 0"></path>
+<path d="M12 9v3"></path>
+</svg>
+</button>
+</div>
+<div hidden="" id="ospitiTopTools">
+<button aria-label="Nuovo ospite" class="icon-btn icon-btn-whiteorange" id="btnNewGuestTop" type="button">
+<svg aria-hidden="true" class="ui-ico" viewbox="0 0 24 24">
+<path d="M12 5v14"></path>
+<path d="M5 12h14"></path>
+</svg>
+</button>
+<button aria-label="Calendario" class="icon-btn icon-btn-whiteindigo" id="goCalendarioTopOspiti" type="button">
+<svg aria-hidden="true" class="ui-ico" viewbox="0 0 24 24">
+<path d="M7 3v3"></path>
+<path d="M17 3v3"></path>
+<path d="M4.5 8h15"></path>
+<path d="M6 6h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2Z"></path>
+<path d="M8 12h.01"></path><path d="M12 12h.01"></path><path d="M16 12h.01"></path>
+<path d="M8 16h.01"></path><path d="M12 16h.01"></path><path d="M16 16h.01"></path>
+</svg>
+</button>
+</div>
+<div hidden="" id="speseTopTools"><button aria-label="Aggiungi spesa" class="icon-btn icon-btn-whiteorange" id="btnAddSpesa" type="button"><svg aria-hidden="true" class="ui-ico" viewbox="0 0 24 24"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg></button><button aria-label="Grafico e riepilogo" class="icon-btn icon-btn-whiteblue" id="btnSpeseInsights" type="button"><svg aria-hidden="true" class="ui-ico" viewbox="0 0 24 24"><path d="M4 19V5"></path><path d="M4 19h16"></path><path d="M8 17v-6"></path><path d="M12 17V7"></path><path d="M16 17v-3"></path></svg></button></div>
+<div hidden="" id="prodottiTopTools">
+<button aria-label="Inserisci prodotto" class="icon-btn icon-btn-whiteorange" id="prodAddBtn" type="button">
+<svg aria-hidden="true" class="ui-ico" viewbox="0 0 24 24"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg>
+</button>
+<button aria-label="Azzera quantita prodotti" class="icon-btn icon-btn-whitered" id="prodResetBtn" type="button">
+<svg aria-hidden="true" class="ui-ico" viewbox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7"></path><path d="M3 4v6h6"></path></svg>
+</button>
+<button aria-label="Salva lista prodotti" class="icon-btn icon-btn-whitegreen" id="prodSaveBtn" type="button">
+<svg aria-hidden="true" class="ui-ico" viewbox="0 0 24 24"><path d="M20 6 9 17l-5-5"></path></svg>
+</button>
+</div>
+<div hidden="" id="statGenTopTools">
+<button aria-label="Torna a Statistiche" class="icon-btn icon-btn-whiteorange" id="btnBackStatistiche" type="button">
+<svg aria-hidden="true" class="ui-ico" viewbox="0 0 24 24">
+<path d="M15 18l-6-6 6-6"></path>
+<path d="M9 12h12"></path>
+</svg>
+</button>
+<button aria-label="Apri grafico" class="icon-btn icon-btn-whiteblue" id="btnStatPie" type="button">
+<svg aria-hidden="true" class="ui-ico" viewbox="0 0 24 24">
+<path d="M12 12V2a10 10 0 1 1-10 10h10Z"></path>
+<path d="M14 2.2A10 10 0 0 1 21.8 10H14V2.2Z"></path>
+</svg>
+</button>
+</div>
+<div hidden="" id="statMensiliTopTools">
+<button aria-label="Torna a Statistiche" class="icon-btn icon-btn-whiteorange" id="btnBackStatisticheMensili" type="button">
+<svg aria-hidden="true" class="ui-ico" viewbox="0 0 24 24">
+<path d="M15 18l-6-6 6-6"></path>
+<path d="M9 12h12"></path>
+</svg>
+</button>
+<button aria-label="Apri grafico" class="icon-btn icon-btn-whiteblue" id="btnStatMensiliPie" type="button">
+<svg aria-hidden="true" class="ui-ico" viewbox="0 0 24 24">
+<path d="M12 12V2a10 10 0 1 1-10 10h10Z"></path>
+<path d="M14 2.2A10 10 0 0 1 21.8 10H14V2.2Z"></path>
+</svg>
+</button>
+</div>
+<div hidden="" id="statSpeseTopTools">
+<button aria-label="Torna a Statistiche" class="icon-btn icon-btn-whiteorange" id="btnBackStatisticheSpese" type="button">
+<svg aria-hidden="true" class="ui-ico" viewbox="0 0 24 24">
+<path d="M15 18l-6-6 6-6"></path>
+<path d="M9 12h12"></path>
+</svg>
+</button>
+<button aria-label="Apri grafico" class="icon-btn icon-btn-whiteblue" id="btnStatSpesePie" type="button">
+<svg aria-hidden="true" class="ui-ico" viewbox="0 0 24 24">
+<path d="M12 12V2a10 10 0 1 1-10 10h10Z"></path>
+<path d="M14 2.2A10 10 0 0 1 21.8 10H14V2.2Z"></path>
+</svg>
+</button>
+</div>
+<div hidden="" id="statPrenTopTools">
+<button aria-label="Torna a Statistiche" class="icon-btn icon-btn-whiteorange" id="btnBackStatistichePrenotazioni" type="button">
+<svg aria-hidden="true" class="ui-ico" viewbox="0 0 24 24">
+<path d="M15 18l-6-6 6-6"></path>
+<path d="M9 12h12"></path>
+</svg>
+</button>
+</div>
+<div hidden="" id="statAziendaTopTools">
+<button aria-label="Torna a Statistiche" class="icon-btn icon-btn-whiteorange" id="btnBackStatisticheAzienda" type="button">
+<svg aria-hidden="true" class="ui-ico" viewbox="0 0 24 24">
+<path d="M15 18l-6-6 6-6"></path>
+<path d="M9 12h12"></path>
+</svg>
+</button>
+</div>
+<div hidden="" id="statAmmTopTools">
+<button aria-label="Torna a Statistiche" class="icon-btn icon-btn-whiteorange" id="btnBackStatisticheAmministratore" type="button">
+<svg aria-hidden="true" class="ui-ico" viewbox="0 0 24 24">
+<path d="M15 18l-6-6 6-6"></path>
+<path d="M9 12h12"></path>
+</svg>
+</button>
+<button aria-label="Dati amministratore" class="icon-btn icon-btn-whiteorange" id="btnAdminInputsTop" type="button"><svg aria-hidden="true" class="ui-ico" viewbox="0 0 24 24"><path d="M4 21V14"></path><path d="M4 10V3"></path><path d="M12 21V12"></path><path d="M12 8V3"></path><path d="M20 21V16"></path><path d="M20 12V3"></path><path d="M2 14h4"></path><path d="M10 8h4"></path><path d="M18 16h4"></path></svg></button>
 </div>
 
-        <div class="actions5" aria-label="Azioni impostazioni">
-          <button class="action-btn a1" id="btnSave" aria-label="Salva dati">
-            <svg viewBox="0 0 24 24"><path d="M4 4h13l3 3v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4Z"></path><path d="M8 4v6h8V4"></path><path d="M8 20v-6h8v6"></path></svg>
-          </button>
-          <button class="action-btn a2" id="btnLoad" aria-label="Richiama dati">
-            <svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-3-6.7"></path><path d="M21 3v6h-6"></path></svg>
-          </button>
-          <button class="action-btn a3" id="btnAddSoc" aria-label="Aggiungi società">
-            <svg viewBox="0 0 24 24"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg>
-          </button>
-          <button class="action-btn a4" id="btnWipe" aria-label="Cancella account e dati">
-            <svg viewBox="0 0 24 24"><path d="M3 6h18"></path><path d="M8 6V4h8v2"></path><path d="M6 6l1 16h10l1-16"></path><path d="M10 11v6"></path><path d="M14 11v6"></path></svg>
-          </button>
-          <button class="action-btn a5" id="btnLogout" aria-label="Esci dall'account">
-            <svg viewBox="0 0 24 24"><path d="M10 17l5-5-5-5"></path><path d="M15 12H3"></path><path d="M21 3v18"></path></svg>
-          </button>
-        </div>
-      </div>
-    </section>
 
 
-    <!-- PAZIENTI: LISTA -->
-    <section class="view" id="viewPatients" aria-label="Pazienti">
-      <div class="page">
-        <div class="page-header">
-          <div class="page-title">Pazienti</div>
-        </div>
-
-        <div class="pill-row pill-row-2" aria-label="Ordinamento">
-          
-          <button class="pill-wide pill-tab pat-sort-btn" id="patSortDate" aria-label="In scadenza"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4.5" width="18" height="16" rx="2"></rect><path d="M16 3v3"></path><path d="M8 3v3"></path><path d="M3 9h18"></path><path d="M12 13v4"></path><path d="M12 13h3"></path></svg><span class="pat-sort-label">Scad</span></button>
-          <button class="pill-wide pill-tab pat-sort-btn" id="patSortAZ" aria-label="Ordina A-Z"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h8"></path><path d="M8 10h5"></path><path d="M8 14h8"></path><path d="M8 18h5"></path><path d="M18 6v12"></path><path d="M15 15l3 3 3-3"></path></svg><span class="pat-sort-label">AZ</span></button>
-          <button class="pill-wide pill-tab pat-sort-btn" id="patSortSoc" aria-label="Filtra società"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 21V7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v14"></path><path d="M9 21V9h6v12"></path><path d="M8 13h.01"></path><path d="M8 16h.01"></path><path d="M16 13h.01"></path><path d="M16 16h.01"></path></svg><span class="pat-sort-label">Soc</span></button>
-          <button class="pill-wide pill-tab pat-sort-btn" id="patSortToday" aria-label="Oggi"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4.5" width="18" height="16" rx="2"></rect><path d="M16 3v3"></path><path d="M8 3v3"></path><path d="M3 9h18"></path><path d="M12 13h.01"></path></svg><span class="pat-sort-label">Oggi</span></button>
-        </div>
-
-        <div class="list" id="patientsList" aria-label="Lista pazienti"></div>
-      </div>
-    </section>
-
-    <!-- PAZIENTE: SCHEDA -->
-    <section class="view" id="viewPatientForm" aria-label="Scheda paziente">
-      <div class="card card-form patient-card">
-        <div class="patient-head">
-          <div class="patient-title">Scheda paziente</div>
-          <div class="patient-head-actions">
-            <button class="mini-icon" id="btnPatCalendar" aria-label="Calendario">
-              <svg viewBox="0 0 24 24"><path d="M8 2v3"></path><path d="M16 2v3"></path><path d="M3 9h18"></path><path d="M5 5h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Z"></path></svg>
-            </button>
-            <button class="mini-icon" id="btnPatBackList" aria-label="Lista pazienti">
-              <svg viewBox="0 0 24 24"><path d="M4 6h16"></path><path d="M4 12h16"></path><path d="M4 18h16"></path></svg>
-            </button>
-            <button class="mini-icon" id="btnPatEdit" aria-label="Modifica">
-              <svg viewBox="0 0 24 24"><path d="M12 20h9"></path><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z"></path></svg>
-            </button>
-            <button class="mini-icon circle" id="btnPatDelete" aria-label="Elimina paziente" hidden>
-              <svg viewBox="0 0 24 24"><path d="M6 6l12 12"></path><path d="M18 6l-12 12"></path></svg>
-            </button>
+<div hidden="" id="statPiscinaTopTools">
+<button aria-label="Torna a Statistiche" class="icon-btn icon-btn-whiteorange" id="btnBackStatistichePiscina" type="button">
+<svg aria-hidden="true" class="ui-ico" viewbox="0 0 24 24">
+<path d="M15 18l-6-6 6-6"></path>
+<path d="M9 12h12"></path>
+</svg>
+</button>
+<button aria-label="Genera report mese" class="icon-btn icon-btn-whitegreen" id="btnPiscinaBackfillTop" type="button">
+<svg aria-hidden="true" class="ui-ico" viewbox="0 0 24 24">
+<path d="M7 3v3"></path>
+<path d="M17 3v3"></path>
+<path d="M4.5 8h15"></path>
+<path d="M6 6h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2Z"></path>
+<path d="M12 12v6"></path>
+<path d="M9 15h6"></path>
+</svg>
+</button>
+<button aria-label="Stampa report" class="icon-btn icon-btn-whiteorange" id="piscinaPrintBtn" type="button">
+<svg aria-hidden="true" class="ui-ico" viewBox="0 0 24 24">
+<path d="M6 9V3h12v6"></path>
+<path d="M6 18h12v3H6z"></path>
+<path d="M6 14h12"></path>
+<path d="M8 14v4"></path>
+<path d="M16 14v4"></path>
+<path d="M6 9h-1a2 2 0 0 0-2 2v5h3"></path>
+<path d="M18 16h3v-5a2 2 0 0 0-2-2h-1"></path>
+</svg>
+</button>
 </div>
-        </div>
-        <div class="divider"></div>
 
-        <form class="form" id="formPatient">
-          <input class="field" id="patName" type="text" placeholder="Nome e cognome" autocomplete="name" required />
+<!-- HOME: Impostazioni (solo in HOME) -->
+<button aria-label="Impostazioni" class="icon-btn icon-btn-whiteorange" hidden="" id="homeSettingsTop" type="button"><svg aria-hidden="true" class="ui-ico" viewbox="0 0 24 24"><path d="M12 14.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z"></path><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="M4.93 4.93l1.41 1.41"></path><path d="M17.66 17.66l1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="M4.93 19.07l1.41-1.41"></path><path d="M17.66 6.34l1.41-1.41"></path></svg></button>
+<button aria-label="Logout" class="icon-btn icon-btn-whiteorange" hidden="" id="opLogoutTop" type="button"><svg aria-hidden="true" class="ui-ico" viewbox="0 0 24 24"><path d="M10 17l1 1a2 2 0 0 0 2 0l1-1"></path><path d="M12 3v10"></path><path d="M7 8a6 6 0 1 0 10 0"></path></svg></button>
+<button aria-label="IRAP" class="icon-btn icon-btn-whiteblue" hidden="" id="btnIrapTop" type="button">
+<svg aria-hidden="true" class="ui-ico" viewbox="0 0 24 24">
+<path d="M6 18l12-12"></path>
+<path d="M8 7.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0Z"></path>
+<path d="M19 16.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0Z"></path>
+</svg>
+</button>
 
-          
-          <div class="row-address" id="rowPatAddress">
-            <input class="field" id="patAddress" type="text" placeholder="Indirizzo" autocomplete="street-address" required />
-            <button class="geo-btn" id="btnPatGeotag" type="button" aria-label="Geotag" hidden style="display:none">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s7-4.5 7-10a7 7 0 1 0-14 0c0 5.5 7 10 7 10Z"></path><circle cx="12" cy="11" r="2.5"></circle></svg>
-            </button>
-          </div>
-<div class="row-soc">
-            <input class="field" id="patSoc" type="text" placeholder="Società" readonly />
-            <input id="patSocId" type="hidden" />
-            <button class="drop-btn" id="btnPickSoc" type="button" aria-label="Seleziona società">
-              <svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"></path></svg>
-            </button>
-          </div>
+<div hidden="" id="lavanderiaTopTools">
+<button aria-label="Genera report lavanderia" class="icon-btn icon-btn-whiteblue" id="btnLaundryGenerateTop" type="button">
+<svg aria-hidden="true" class="ui-ico" viewBox="0 0 24 24">
+<path d="M6 2h9l3 3v17a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Z"></path>
+<path d="M15 2v4h4"></path>
+<path d="M8 12h8"></path>
+<path d="M8 16h8"></path>
+</svg>
+</button>
+</div>
 
-          
-          <div class="therapies-wrap" id="therapiesWrap" aria-label="Terapie"></div>
+<button aria-label="Ospiti" class="icon-btn icon-btn-whitegreen" hidden="" id="guestBackTop" type="button"><svg aria-hidden="true" class="ui-ico" viewbox="0 0 24 24"><path d="M15 18l-6-6 6-6"></path></svg></button>
+<button aria-label="Home" class="icon-btn icon-btn-whiteorange" id="hamburgerBtn"><svg aria-hidden="true" class="ui-ico" viewbox="0 0 24 24"><path d="M3 10.5L12 3l9 7.5"></path><path d="M5 10v11h14V10"></path><path d="M9 21v-6h6v6"></path></svg></button>
+</div>
+</div>
+</header>
+<main class="wrap">
+<!-- AUTH (account) -->
+<section class="page" hidden="" id="page-auth">
+<div class="auth-page">
+<div class="auth-card">
+<div class="auth-logo-wrap">
+<img alt="Daedalium" class="auth-logo" src="./assets/logo.jpg?v=dDAE_2.205"/>
+</div>
+<!-- MENU (4 pulsanti) -->
+<div class="auth-menu" id="authMenu">
+<div class="auth-grid">
+<button class="auth-btn auth-btn-azure" id="btnMenuCreate" type="button">crea account</button>
+<button class="auth-btn auth-btn-gray" id="btnMenuEdit" type="button">modifica account</button>
+<button class="auth-btn auth-btn-orange" id="btnMenuAdmin" type="button">amministratore</button>
+<button class="auth-btn auth-btn-green" id="btnMenuOperator" type="button">operatore</button>
+</div>
+</div>
+<!-- FORM -->
+<div class="auth-form" hidden="" id="authForm">
+<!-- Step 1: struttura (solo operatore) -->
+<div hidden="" id="authOperatorTenant">
+<div class="field float">
+<input autocapitalize="none" autocomplete="off" id="authTenant" inputmode="text" placeholder=" " spellcheck="false"/>
+<label for="authTenant">Struttura</label>
+</div>
+<div class="auth-remember">
+<label class="auth-check">
+<input id="authTenantRemember" type="checkbox"/>
+<span>Ricorda struttura</span>
+</label>
+</div>
+</div>
+<!-- Credenziali -->
+<div id="authCredsWrap">
+<div class="field float">
+<input autocomplete="username" id="authUsername" placeholder=" "/>
+<label for="authUsername" id="authUsernameLabel">Username</label>
+</div>
+<div class="field float" style="margin-top:10px;">
+<input autocomplete="current-password" id="authPassword" placeholder=" " type="password"/>
+<label for="authPassword" id="authPasswordLabel">Password</label>
+</div>
+</div>
+<div class="auth-extra" hidden="" id="authExtra">
+<div class="field float" style="margin-top:10px;">
+<input autocomplete="name" id="authNome" placeholder=" "/>
+<label for="authNome">Nome</label>
+</div>
+<div class="field float" style="margin-top:10px;">
+<input autocomplete="tel" id="authTelefono" inputmode="tel" placeholder=" "/>
+<label for="authTelefono">Telefono</label>
+</div>
+<div class="field float" style="margin-top:10px;">
+<input autocomplete="email" id="authEmail" inputmode="email" placeholder=" "/>
+<label for="authEmail">Email</label>
+</div>
+<div hidden="" id="authConfirmPasswordWrap">
+<div class="field float" style="margin-top:10px;">
+<input autocomplete="new-password" id="authPassword2" placeholder=" " type="password"/>
+<label for="authPassword2">Conferma password</label>
+</div>
+</div>
+<div hidden="" id="authNewPasswordWrap">
+<div class="field float" style="margin-top:10px;">
+<input autocomplete="new-password" id="authNewPassword" placeholder=" " type="password"/>
+<label for="authNewPassword">Nuova password</label>
+</div>
+<div class="field float" style="margin-top:10px;">
+<input autocomplete="new-password" id="authNewPassword2" placeholder=" " type="password"/>
+<label for="authNewPassword2">Conferma nuova password</label>
+</div>
+</div>
+</div>
+<div aria-live="polite" class="auth-hint" id="authHint"></div>
+<div class="auth-action-row">
+<button class="auth-btn auth-btn-gray" id="btnAuthBack" type="button">indietro</button>
+<button class="auth-btn auth-btn-orange" id="btnAuthSubmit" type="button">continua</button>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- HOME (launcher) -->
+<section class="page" id="page-home">
+<div class="home-page"><div class="home-spacer"></div><div class="year-pill" hidden="" id="yearPill"></div><div aria-label="Sezioni" class="home-grid" role="navigation">
+<button aria-label="Ospiti" class="home-main" id="goOspite" type="button">
+<div aria-hidden="true" class="home-main-glyph alt"><svg aria-hidden="true" class="ui-ico" viewbox="0 0 24 24">
+<path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Z"></path>
+<path d="M4.5 21a7.5 7.5 0 0 1 15 0"></path>
+</svg></div>
+<div class="home-main-label">Ospiti</div>
+</button>
+<button aria-label="Calendario" class="home-main" data-go="calendario" id="goCalendario" type="button">
+<div aria-hidden="true" class="home-main-glyph alt"><svg aria-hidden="true" class="ui-ico" viewbox="0 0 24 24">
+<path d="M7 3v3"></path>
+<path d="M17 3v3"></path>
+<path d="M4.5 8h15"></path>
+<path d="M6 6h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2Z"></path>
+<path d="M8 12h.01"></path>
+<path d="M12 12h.01"></path>
+<path d="M16 12h.01"></path>
+<path d="M8 16h.01"></path>
+<path d="M12 16h.01"></path>
+<path d="M16 16h.01"></path>
+</svg></div>
+<div class="home-main-label">Calendario</div>
+</button>
+<button aria-label="Apri Spese" class="home-main" id="openLauncher" type="button">
+<div aria-hidden="true" class="home-main-glyph"><svg aria-hidden="true" class="ui-ico" viewbox="0 0 24 24">
+<path d="M9 6.5h6"></path>
+<path d="M9 6.5V5.5A2.5 2.5 0 0 1 11.5 3h1A2.5 2.5 0 0 1 15 5.5v1"></path>
+<path d="M4.5 9.5h15a2 2 0 0 1 2 2v6.5a3 3 0 0 1-3 3h-13a3 3 0 0 1-3-3V11.5a2 2 0 0 1 2-2Z"></path>
+<path d="M4.5 13h15"></path>
+</svg></div>
+<div class="home-main-label">Spese</div>
+</button>
+<button aria-label="Tassa" class="home-main" id="goTassaSoggiorno" type="button">
+<div aria-hidden="true" class="home-main-glyph"><svg aria-hidden="true" class="ui-ico" viewbox="0 0 24 24">
+<path d="M7 10V8.5A4.5 4.5 0 0 1 11.5 4h1A4.5 4.5 0 0 1 17 8.5V10"></path>
+<path d="M5.5 10h13a2 2 0 0 1 2 2v6a3 3 0 0 1-3 3h-11a3 3 0 0 1-3-3v-6a2 2 0 0 1 2-2Z"></path>
+<path d="M12 13v5"></path>
+<path d="M10.2 14.8 12 13l1.8 1.8"></path>
+</svg></div>
+<div class="home-main-label small">Tassa</div>
+</button>
+<button aria-label="Pulizie" class="home-main" id="goPulizie" type="button">
+<div aria-hidden="true" class="home-main-glyph alt"><svg aria-hidden="true" class="ui-ico" viewbox="0 0 24 24">
+<path d="M12 3v11"></path>
+<path d="M8 14h8"></path>
+<path d="M9 14v4c0 2 1.2 4 3 4s3-2 3-4v-4"></path>
+<path d="M10 18h4"></path>
+</svg></div>
+<div class="home-main-label">Pulizie</div>
+</button>
+<button aria-label="Lavanderia" class="home-main" id="goLavanderia" type="button">
+<div aria-hidden="true" class="home-main-glyph alt"><svg aria-hidden="true" class="ui-ico" viewbox="0 0 24 24">
+<path d="M8 2h8"></path>
+<path d="M7 6h10"></path>
+<path d="M6 6v14a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V6"></path>
+<path d="M9 12a3 3 0 1 0 6 0"></path>
+<path d="M12 9v3"></path>
+</svg></div>
+<div class="home-main-label">Lavanderia</div>
+</button>
+<button aria-label="Statistiche" class="home-main" id="goStatistiche" type="button">
+<div aria-hidden="true" class="home-main-glyph"><svg aria-hidden="true" class="ui-ico" viewbox="0 0 24 24">
+<path d="M7 9V7.5A2.5 2.5 0 0 1 9.5 5h5A2.5 2.5 0 0 1 17 7.5V9"></path>
+<path d="M6 9h12a2 2 0 0 1 2 2v7a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3v-7a2 2 0 0 1 2-2Z"></path>
+<path d="M9 15h6"></path>
+<path d="M12 12v6"></path>
+</svg></div>
+<div class="home-main-label">Statistiche</div>
+</button>
+<button aria-label="Spesa" class="home-main" id="goProdotti" type="button"><div aria-hidden="true" class="home-main-glyph alt"><svg aria-hidden="true" class="ui-ico" viewbox="0 0 24 24">
+<path d="M9 6h12"></path>
+<path d="M9 12h12"></path>
+<path d="M9 18h12"></path>
+<path d="M4 6h.01"></path>
+<path d="M4 12h.01"></path>
+<path d="M4 18h.01"></path>
+</svg></div><div class="home-main-label">Spesa</div></button>
+</div><div class="build" id="buildText">dDAE_2.205</div></div></section>
+<!-- PRODOTTI -->
+<section class="page" hidden="" id="page-prodotti">
+<div class="prodotti-page">
+<div aria-label="Filtri prodotti" class="prodotti-grid">
+<button class="prod-rectbtn prod-blue" id="prodTabColazione" type="button">Colazione</button>
+<button class="prod-rectbtn prod-orange" id="prodTabPulizia" type="button">Prodotti</button>
+</div>
+<div aria-label="Lista prodotti" class="colazione-list prodotti-list" id="prodottiList"></div>
+</div>
+</section>
+<!-- MODAL: Aggiungi prodotto -->
+<div aria-label="Aggiungi prodotto" aria-modal="true" class="modal modal-center" hidden="" id="prodAddModal" role="dialog">
+<div class="modal-card prod-add-card">
+<div class="prod-add-top">
+<div class="prod-add-title">Aggiungi prodotto</div>
+<button aria-label="Chiudi" class="icon-btn icon-btn-whiteblack prod-add-close" id="prodAddClose" type="button">
+<svg aria-hidden="true" class="ui-ico" viewbox="0 0 24 24"><path d="M18 6 6 18"></path><path d="M6 6l12 12"></path></svg>
+</button>
+</div>
+<input autocapitalize="characters" autocomplete="off" class="prod-add-input" id="prodAddInput" inputmode="text" placeholder="Scrivi prodotto" type="text"/>
+<div class="prod-add-actions">
+<button class="prod-add-btn prod-blue" id="prodAddToColazione" type="button">Colazione</button>
+<button class="prod-add-btn prod-orange" id="prodAddToPulizia" type="button">Pulizia</button>
+</div>
+</div>
+</div>
+<!-- STATISTICHE -->
+<section class="page" hidden="" id="page-statistiche">
+<div class="stats-page">
+<div class="stats-title">Statistiche</div>
+<div aria-hidden="true" class="stats-divider"></div>
+<div aria-label="Sezioni statistiche" class="home-grid" role="navigation">
+<button aria-label="Conteggio generale" class="home-main" id="goStatGen" type="button">
+<div aria-hidden="true" class="home-main-glyph"><svg aria-hidden="true" class="ui-ico" viewbox="0 0 24 24">
+<path d="M7 9V7.5A2.5 2.5 0 0 1 9.5 5h5A2.5 2.5 0 0 1 17 7.5V9"></path>
+<path d="M6 9h12a2 2 0 0 1 2 2v7a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3v-7a2 2 0 0 1 2-2Z"></path>
+<path d="M9 15h6"></path>
+<path d="M12 12v6"></path>
+</svg></div>
+<div class="home-main-label">Conteggio generale</div>
+</button>
+<button aria-label="Fatturati mensili" class="home-main" id="goStatMensili" type="button">
+<div aria-hidden="true" class="home-main-glyph alt"><svg aria-hidden="true" class="ui-ico" viewbox="0 0 24 24">
+<path d="M4 19V5"></path>
+<path d="M4 19h16"></path>
+<path d="M8 17v-6"></path>
+<path d="M12 17V7"></path>
+<path d="M16 17v-3"></path>
+</svg></div>
+<div class="home-main-label">Fatturati mensili</div>
+</button>
+<button aria-label="Spese" class="home-main" id="goStatSpese" type="button">
+<div aria-hidden="true" class="home-main-glyph"><svg aria-hidden="true" class="ui-ico" viewbox="0 0 24 24">
+<path d="M9 6.5h6"></path>
+<path d="M9 6.5V5.5A2.5 2.5 0 0 1 11.5 3h1A2.5 2.5 0 0 1 15 5.5v1"></path>
+<path d="M4.5 9.5h15a2 2 0 0 1 2 2v6.5a3 3 0 0 1-3 3h-13a3 3 0 0 1-3-3V11.5a2 2 0 0 1 2-2Z"></path>
+<path d="M4.5 13h15"></path>
+</svg></div>
+<div class="home-main-label">Spese</div>
+</button>
+<button aria-label="Statistiche prenotazione" class="home-main" id="goStatPrenotazioni" type="button">
+<div aria-hidden="true" class="home-main-glyph alt"><svg aria-hidden="true" class="ui-ico" viewbox="0 0 24 24">
+<path d="M7 3v3"></path>
+<path d="M17 3v3"></path>
+<path d="M4.5 8h15"></path>
+<path d="M6 6h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2Z"></path>
+<path d="M8 12h.01"></path><path d="M12 12h.01"></path><path d="M16 12h.01"></path>
+<path d="M8 16h.01"></path><path d="M12 16h.01"></path><path d="M16 16h.01"></path>
+</svg></div>
+<div class="home-main-label">Prenotazioni</div>
+</button>
+<button aria-label="Azienda" class="home-main" id="goStatAzienda" type="button">
+<div aria-hidden="true" class="home-main-glyph"><svg aria-hidden="true" class="ui-ico" viewbox="0 0 24 24">
+<path d="M4 21V7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v14"></path>
+<path d="M9 21v-4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v4"></path>
+<path d="M8 9h.01"></path><path d="M12 9h.01"></path><path d="M16 9h.01"></path>
+<path d="M8 12h.01"></path><path d="M12 12h.01"></path><path d="M16 12h.01"></path>
+</svg></div>
+<div class="home-main-label">Azienda</div>
+</button>
+<button aria-label="Amministratore" class="home-main" id="goStatAmministratore" type="button">
+<div aria-hidden="true" class="home-main-glyph alt"><svg aria-hidden="true" class="ui-ico" viewbox="0 0 24 24">
+<path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Z"></path>
+<path d="M4.5 21a7.5 7.5 0 0 1 15 0"></path>
+</svg></div>
+<div class="home-main-label">Amministratore</div>
+</button>
+<button aria-label="Piscina" class="home-main" id="goStatPiscina" type="button">
+<div aria-hidden="true" class="home-main-glyph"><svg aria-hidden="true" class="ui-ico" viewbox="0 0 24 24">
+<path d="M10 2h4"></path>
+<path d="M10 2v6l-4 7a3 3 0 0 0 2.6 4.5h6.8A3 3 0 0 0 18 15l-4-7V2"></path>
+<path d="M8 14h8"></path>
+<path d="M8.5 18c.6-.6 1.6-.6 2.2 0s1.6.6 2.2 0 1.6-.6 2.2 0"></path>
+</svg></div>
+<div class="home-main-label">Piscina</div>
+</button>
 
-          <div class="therapy-add-row" aria-label="Aggiungi terapia">
-            <button class="plus-btn" id="btnAddTherapy" type="button" aria-label="Aggiungi terapia">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg>
-            </button>
-          </div>
+</div>
+</div>
+</section>
+<!-- STATISTICHE: AZIENDA -->
+<!-- STATISTICHE: AZIENDA -->
+<section class="page" hidden="" id="page-statazienda">
+<div class="stats-page">
+<div class="stats-title">Azienda</div>
+<div aria-hidden="true" class="stats-divider"></div>
+<div class="fin-card">
+<div class="fin-head">
+<div>Voce di Bilancio</div>
+<div class="fin-right">Importo (€)</div>
+</div>
+<div id="aziendaRows"></div>
+</div>
+</div>
+</section><section class="page" hidden="" id="page-statamministratore">
+<div class="stats-page">
+<div class="stats-title">Amministratore</div>
+<div aria-hidden="true" class="stats-divider"></div>
+<div class="fin-card">
+<div class="fin-head">
+<div>Voce Personale</div>
+<div class="fin-right">Importo (€)</div>
+</div>
+<div id="amministratoreRows"></div>
+</div>
+</div>
+</section>
+<!-- STATISTICHE: CONTEGGIO GENERALE -->
+<section class="page" hidden="" id="page-statgen">
+<div class="stats-gen">
+<div class="stats-title">Conteggio generale</div>
+<div aria-hidden="true" class="stats-divider"></div>
+<div class="stats-stack">
+<button class="stat-row" style="--statbg:#2b7cb4" type="button">
+<span class="stat-name">Fatturato totale</span>
+<span class="stat-val" id="sgFatturato">€0,00</span>
+</button>
+<button class="stat-row" style="--statbg:#4d9cc5" type="button">
+<span class="stat-name">Spese totali</span>
+<span class="stat-val" id="sgSpese">€0,00</span>
+</button>
+<button class="stat-row" style="--statbg:#6fb7d6; --statfg:rgba(15,23,42,0.92)" type="button">
+<span class="stat-name">Importo senza ricevuta</span>
+<span class="stat-val" id="sgNoRicevuta">€0,00</span>
+</button>
+<button class="stat-row" style="--statbg:#96bfc7; --statfg:rgba(15,23,42,0.92)" type="button">
+<span class="stat-name">Importo con ricevuta</span>
+<span class="stat-val" id="sgRicevuta">€0,00</span>
+</button>
+<button class="stat-row" style="--statbg:#bfbea9; --statfg:rgba(15,23,42,0.92)" type="button">
+<span class="stat-name">IVA da versare</span>
+<span class="stat-val" id="sgIva">€0,00</span>
+</button>
+<button class="stat-row" style="--statbg:#cf9458" type="button">
+<span class="stat-name">Guadagno totale</span>
+<span class="stat-val" id="sgGuadagno">€0,00</span>
+</button>
+<button class="stat-row" style="--statbg:#c9772b" type="button">
+<span class="stat-name">Giacenza in cassa</span>
+<span class="stat-val" id="sgCassa">€0,00</span>
+</button>
+</div>
+</div>
+</section>
+<!-- STATISTICHE: INCASSI MENSILI -->
+<section class="page" hidden="" id="page-statmensili">
+<div class="stats-gen">
+<div class="stats-title">Fatturati mensili</div>
+<div aria-hidden="true" class="stats-divider"></div>
+<div class="month-stack" id="smList"></div>
+</div>
+</section>
 
-<button class="pill-btn pill-blue" id="btnPatSave" type="submit">salva</button>
-        </form>
+<!-- STATISTICHE: SPESE GENERALI -->
+<section class="page" hidden="" id="page-statspese">
+<div class="stats-gen">
+<div class="stats-title">Spese generali</div>
+<div aria-hidden="true" class="stats-divider"></div>
+<div class="stats-stack">
+<button class="stat-row" style="--statbg:var(--blue)" type="button">
+<span class="stat-name">Contanti</span>
+<span class="stat-val" id="ssContanti">€0,00</span>
+</button>
+<button class="stat-row" style="--statbg:var(--beige); --statfg:rgba(15,23,42,0.92)" type="button">
+<span class="stat-name">Tassa soggiorno</span>
+<span class="stat-val" id="ssTassa">€0,00</span>
+</button>
+<button class="stat-row" style="--statbg:var(--orange)" type="button">
+<span class="stat-name">IVA 22%</span>
+<span class="stat-val" id="ssIva22">€0,00</span>
+</button>
+<button class="stat-row" style="--statbg:var(--blue2); --statfg:rgba(15,23,42,0.92)" type="button">
+<span class="stat-name">IVA 10%</span>
+<span class="stat-val" id="ssIva10">€0,00</span>
+</button>
+<button class="stat-row" style="--statbg:var(--sky)" type="button">
+<span class="stat-name">IVA 4%</span>
+<span class="stat-val" id="ssIva4">€0,00</span>
+</button>
+</div>
+</div>
+</section>
+<section class="page" hidden="" id="page-statpiscina">
+  <div class="stats-page">
+    <div class="stats-title">Piscina</div>
+    <div aria-hidden="true" class="stats-divider"></div>
+
+    <div class="piscina-wrap" aria-label="Sezione Piscina">
+      <div class="piscina-nav" aria-label="Navigazione mese">
+        <button aria-label="Mese precedente" class="icon-btn icon-btn-whiteblue" id="piscinaPrevMonth" type="button">
+          <svg aria-hidden="true" class="ui-ico" viewBox="0 0 24 24">
+            <path d="M15 18l-6-6 6-6"></path>
+          </svg>
+        </button>
+
+        <div class="piscina-nav-center" id="piscinaNavLabel">—</div>
+
+        <button aria-label="Mese successivo" class="icon-btn icon-btn-whiteblue" id="piscinaNextMonth" type="button">
+          <svg aria-hidden="true" class="ui-ico" viewBox="0 0 24 24">
+            <path d="M9 6l6 6-6 6"></path>
+          </svg>
+        </button>
       </div>
-    </section>
 
+      <div class="piscina-today" id="piscinaTodayLabel">—</div>
 
-    <!-- CALENDARIO -->
-    <section class="view" id="viewCalendar" aria-label="Calendario">
-      <div class="calendar-wrap" aria-label="Calendario">
-        <div class="calendar-nav" aria-label="Navigazione calendario">
-          <div class="calendar-nav-left"><div id="calNowInfo" class="cal-nowinfo" aria-live="polite"></div></div>
-          <div class="calendar-nav-center" aria-label="Navigazione">
-            <button class="icon-btn" id="btnCalPrev" aria-label="Giorno precedente" hidden>
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M15 18l-6-6 6-6"></path>
-            </svg>
-          </button>
-            <button class="icon-btn" id="btnCalToday" aria-label="Giorno attuale" hidden>
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="12" cy="12" r="7"></circle>
-              <path d="M12 12h.01"></path>
-            </svg>
-          </button>
-            <button class="icon-btn" id="btnCalNext" aria-label="Giorno successivo" hidden>
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M9 6l6 6-6 6"></path>
-            </svg>
-          </button>
-          </div>
-          <div class="calendar-nav-right" aria-label="Vista">
-          <button class="icon-btn" id="btnCalPatients" aria-label="Lista pazienti" hidden>
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-              <circle cx="12" cy="7" r="4"></circle>
-            </svg>
-          </button>
-          </div>
+      <div class="piscina-cal" aria-label="Calendario piscina">
+        <div aria-hidden="true" class="piscina-dow">
+          <div>Lun</div><div>Mar</div><div>Mer</div><div>Gio</div><div>Ven</div><div>Sab</div><div>Dom</div>
         </div>
-
-        <div class="calendar-date" id="calDateTitle">—</div>
-
-                <div class="calendar-grid" aria-label="Griglia calendario">
-          <div class="cal-corner" id="calCorner" aria-hidden="true"></div>
-
-          <div class="cal-days-scroll" id="calDaysScroll" aria-label="Giorni (scorri)">
-            <div class="cal-days" id="calDaysCol" aria-label="Giorni del mese"></div>
-          </div>
-
-          <div class="cal-hours-scroll" id="calHoursScroll" aria-label="Ore (scorri verticale)">
-            <div class="cal-hours" id="calHoursRow" aria-label="Ore"></div>
-          </div>
-
-          <div class="cal-body-scroll" id="calScroll" aria-label="Calendario (scorri)">
-            <div class="cal-body" id="calBody" aria-label="Slot"></div>
-          </div>
-        </div>
-
-                  </div>
+        <div class="piscina-grid" id="piscinaGrid" role="grid" aria-label="Griglia giorni"></div>
       </div>
-    </section>
+</div>
+  </div>
+</section>
 
-    <!-- MODAL: Seleziona società -->
-    <div class="modal" id="modalPickSoc" aria-hidden="true">
-      <div class="modal-card">
-        <button class="dot-close" id="btnPickSocClose" aria-label="Chiudi"></button>
-        <div class="modal-title">Società</div>
-        <div class="list" id="socPickList" aria-label="Elenco società"></div>
-      </div>
+<!-- STATISTICHE: PRENOTAZIONI -->
+<section class="page" hidden="" id="page-statprenotazioni">
+<div class="stats-gen">
+<div class="stats-title">Prenotazioni</div>
+<div aria-hidden="true" class="stats-divider"></div>
+<div class="chart-wrap"><canvas id="statPrenCanvas"></canvas></div>
+<div class="legend" id="statPrenLegend"></div>
+</div>
+</section>
+<section class="page" hidden="" id="page-impostazioni">
+<div class="card">
+<div class="hd">
+<h2 class="page-title">Impostazioni</h2>
+<div class="settings-audio">
+  <span class="settings-audio-label">Audio</span>
+  <label class="switch" aria-label="Audio on/off">
+    <input type="checkbox" id="audioToggle" aria-label="Audio on/off"/>
+    <span class="slider"></span>
+  </label>
+</div>
+</div>
+<div class="bd">
+<div class="settings-tabs" style="margin-top:10px;">
+<div aria-label="Account attivo" class="settings-tab" id="settingsAccountTab">—</div>
+<div aria-label="Anno selezionato" class="settings-tab" id="settingsYearTab">—</div>
+</div>
+<div class="field float" style="margin-top:10px;">
+<select aria-label="Anno di esercizio" class="select" id="setAnno"></select>
+<label for="setAnno">Anno di esercizio</label>
+</div>
+<div class="field float" style="margin-top:10px;">
+<input autocomplete="off" id="setOp1" placeholder=" "/>
+<label for="setOp1">Operatore 1 (nome)</label>
+</div>
+<div class="field float" style="margin-top:10px;">
+<input autocomplete="off" id="setOp2" placeholder=" "/>
+<label for="setOp2">Operatore 2 (nome)</label>
+</div>
+<div class="field float" style="margin-top:10px;">
+<input autocomplete="off" id="setOp3" placeholder=" "/>
+<label for="setOp3">Operatore 3 (nome)</label>
+</div>
+<div class="field float" style="margin-top:16px;">
+<input id="setTariffa" inputmode="decimal" min="0" placeholder=" " step="0.01" type="number"/>
+<label for="setTariffa">Tariffa oraria operatore (€ / ora)</label>
+</div>
+<div class="field float" style="margin-top:10px;">
+<input id="setBenzina" inputmode="decimal" min="0" placeholder=" " step="0.01" type="number"/>
+<label for="setBenzina">Costo benzina (€)</label>
+</div>
+<div class="field float" style="margin-top:10px;">
+<input id="setTassa" inputmode="decimal" min="0" placeholder=" " step="0.01" type="number"/>
+<label for="setTassa">Tassa di soggiorno (€ / persona / notte)</label>
+</div>
+<div class="row settings-actions" style="margin-top:16px;">
+<button aria-label="Salva" class="settings-btn settings-btn-save" id="settingsSaveBtn" type="button">
+<svg aria-hidden="true" class="ui-ico" viewbox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h11l3 3v11a2 2 0 0 1-2 2Z"></path><path d="M7 21V13h10v8"></path><path d="M7 3v6h8"></path></svg>
+</button>
+<button aria-label="Ricarica" class="settings-btn settings-btn-reload" id="settingsReloadBtn" type="button">
+<svg aria-hidden="true" class="ui-ico" viewbox="0 0 24 24"><path d="M21 12a9 9 0 1 1-2.64-6.36"></path><path d="M21 3v6h-6"></path></svg>
+</button>
+<button aria-label="Operatore" class="settings-btn settings-btn-operator" id="settingsCreateOperatorBtn" type="button">
+<svg aria-hidden="true" class="ui-ico" viewbox="0 0 24 24"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg>
+</button>
+<button aria-label="Elimina account" class="settings-btn settings-btn-delete" id="settingsDeleteBtn" type="button">
+<svg aria-hidden="true" class="ui-ico" viewbox="0 0 24 24">
+<path d="M4 7h16"></path>
+<path d="M10 11v6"></path>
+<path d="M14 11v6"></path>
+<path d="M6 7l1 14h10l1-14"></path>
+<path d="M9 7V4h6v3"></path>
+</svg>
+</button>
+<button aria-label="Logout" class="settings-btn settings-btn-logout" id="settingsLogoutBtn" type="button">
+<svg aria-hidden="true" class="ui-ico" viewbox="0 0 24 24"><path d="M10 17l5-5-5-5"></path><path d="M15 12H3"></path><path d="M21 3v18"></path></svg>
+</button>
+</div>
+<!-- hint rimosso (già presente altrove / non necessario) -->
+</div>
+</div>
+</section>
+<section class="page" hidden="" id="page-tassa">
+<div class="card">
+<div class="hd tax-hd">
+<h2>Tassa di soggiorno</h2>
+</div>
+<div class="bd">
+
+<div class="tax-controls">
+  <div class="tax-year-row" role="group" aria-label="Anno e stima">
+  <button aria-label="Anno corrente" class="btn tax-year-pill" id="taxYearBtn" type="button"><span id="taxYearBtnLabel">—</span></button>
+  <button aria-label="Stima anno corrente" class="btn tax-year-pill" id="taxEstimateBtn" type="button">Stima</button>
+</div>
+  <div aria-label="Trimestri" class="tax-quarter-grid" role="group">
+    <button aria-label="Primo trimestre" class="btn tax-quarter tax-q1" id="taxQ1Btn" type="button">I</button>
+    <button aria-label="Secondo trimestre" class="btn tax-quarter tax-q2" id="taxQ2Btn" type="button">II</button>
+    <button aria-label="Terzo trimestre" class="btn tax-quarter tax-q3" id="taxQ3Btn" type="button">III</button>
+    <button aria-label="Quarto trimestre" class="btn tax-quarter tax-q4" id="taxQ4Btn" type="button">IV</button>
+  </div>
+  <div class="tax-period" hidden>
+    <div class="field float">
+      <input id="taxFrom" placeholder=" " type="date"/>
+      <label for="taxFrom">Da</label>
     </div>
-
-    <!-- MODAL: Ora inizio -->
-    <div class="modal" id="modalPickTime" aria-hidden="true">
-      <div class="modal-card">
-        <button class="dot-close" id="btnPickTimeClose" aria-label="Chiudi"></button>
-        <div class="modal-title">Ora inizio</div>
-        <div class="list" id="timePickList" aria-label="Elenco orari"></div>
-      </div>
+    <div class="field float">
+      <input id="taxTo" placeholder=" " type="date"/>
+      <label for="taxTo">A</label>
     </div>
+  </div>
+</div>
 
-    
-    
+<div class="tax-results" hidden="" id="taxResults">
+<div class="tax-result-card tax-result-paying" id="taxPayingCard">
+<div class="tax-result-top">
+<div class="tax-result-title">Ospiti paganti</div>
+<div class="tax-result-value" id="taxPayingCount">—</div>
+</div>
+<div class="tax-result-sub" id="taxPayingAmount">—</div>
+</div>
+<div class="tax-result-card tax-result-kids" id="taxKidsCard">
+<div class="tax-result-top">
+<div class="tax-result-title">Bambini (&lt;10)</div>
+<div class="tax-result-value" id="taxKidsCount">—</div>
+</div>
+<div class="tax-result-sub" id="taxKidsAmount">—</div>
+</div>
+<div class="tax-result-card tax-result-reduced" id="taxReducedCard">
+<div class="tax-result-top">
+<div class="tax-result-title">Altri (ridotti)</div>
+<div class="tax-result-value" id="taxReducedCount">—</div>
+</div>
+<div class="tax-result-sub" id="taxReducedAmount">—</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- 1) INSERISCI -->
+<section class="page" hidden="" id="page-inserisci">
+<div class="card">
+<div class="hd"><h2>Inserisci spesa</h2></div>
+<div class="bd">
+<div class="field float">
+<input id="spesaImporto" inputmode="decimal" min="0" placeholder=" " step="0.01" type="number"/>
+<label for="spesaImporto">Importo (€)</label>
+</div>
+<div class="field float" style="margin-top:10px;">
+<input autocomplete="off" id="spesaMotivazione" list="motivazioniList" placeholder=" "/>
+<label for="spesaMotivazione">Motivazione</label>
+<datalist id="motivazioniList"></datalist>
+</div>
+<div class="field float" style="margin-top:10px;">
+<input id="spesaData" type="date"/>
+<label for="spesaData">Data</label>
+</div>
+<div class="field float" style="margin-top:10px;">
+<select id="spesaCategoria" required="">
+<option value="">Seleziona…</option>
+<option value="CONTANTI">Contanti</option>
+<option value="TASSA_SOGGIORNO">Tassa di soggiorno</option>
+<option value="IVA_22">IVA 22%</option>
+<option value="IVA_10">IVA 10%</option>
+<option value="IVA_4">IVA 4%</option>
+</select>
+<label for="spesaCategoria">Categoria</label>
+</div>
+<div class="row" style="margin-top:14px;">
+<button class="btn primary" id="btnSaveSpesa" style="flex:1;" type="button">Salva</button>
+</div>
+</div>
+</div>
+</section>
+<!-- 2) SPESE -->
+<section class="page" hidden="" id="page-spese">
+<div class="card">
+<div class="hd">
+<h2>Spese</h2>
+</div>
+<div class="bd">
+<div class="period-tabs-row">
+<div class="field period-preset">
+<select aria-label="Periodo" id="periodPreset1">
+<!-- options injected by JS -->
+</select>
+</div>
+<div class="field period-sort">
+<select aria-label="Ordina spese" id="speseSort">
+<option value="date">Ordina: data</option>
+<option value="insert">Ordina: inserimento</option>
+<option value="motivazione">Ordina: motivazione</option>
+</select>
+</div>
+</div>
+<div id="speseViewList">
+<div class="list" id="speseList"></div>
+</div>
+<div hidden="" id="speseViewInsights">
+<div class="kpi-stack kpi-top" style="margin-top:12px;">
+<div class="kpi-card">
+<div class="kpi-label">Totale spese</div>
+<div class="kpi-value" id="kpiTotSpese">€ 0,00</div>
+</div>
+<div class="kpi-card accent">
+<div class="kpi-label">IVA detraibile</div>
+<div class="kpi-value" id="kpiIvaDetraibile">€ 0,00</div>
+</div>
+<div class="kpi-card">
+<div class="kpi-label">Totale imponibile</div>
+<div class="kpi-value" id="kpiImponibile">€ 0,00</div>
+</div>
+</div>
+<div style="height:12px;"></div>
+<div class="chart-wrap">
+<canvas aria-label="Grafico a torta per categoria" height="320" id="pieCanvas" width="320"></canvas>
+</div>
+<div class="legend" id="pieLegend"></div>
+</div>
+</div>
+</div>
+</section>
+<!-- 3) RIEPILOGO -->
+<!-- 4) GRAFICO -->
+<!-- Pagina Ospite (DB) -->
+<section aria-label="Nuovo ospite" class="page" hidden="" id="page-ospite">
+<div class="content">
+<div class="ospite-wrap">
+<div class="card guest-form-card">
+<div class="hd">
+<h2 id="ospiteFormTitle">Nuovo ospite</h2>
+<div class="guest-hd-actions" hidden="" id="ospiteHdActions">
+<button aria-label="Vai al calendario" class="tl-btn tl-indigo" data-guest-cal="" title="Calendario" type="button">
+<svg aria-hidden="true" class="tl-ico" viewbox="0 0 24 24"><path d="M8 2v3M16 2v3M3 9h18"></path><path d="M5 5h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2"></path></svg><span class="sr-only">Calendario</span>
+</button>
+<button aria-label="Modifica ospite" class="tl-btn tl-yellow" data-guest-edit="" type="button"><svg aria-hidden="true" class="tl-ico" viewbox="0 0 24 24"><path d="M12 20h9"></path><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"></path></svg><span class="sr-only">Modifica</span></button>
+<button aria-label="Elimina ospite" class="tl-btn tl-red" data-guest-del="" type="button"><svg aria-hidden="true" class="tl-ico" viewbox="0 0 24 24"><path d="M3 6h18"></path><path d="M8 6V4h8v2"></path><path d="M6 6l1 16h10l1-16"></path><path d="M10 11v6M14 11v6"></path></svg><span class="sr-only">Elimina</span></button>
+</div>
+</div>
+<div class="bd form-stack">
+<div class="field float">
+<input autocomplete="name" id="guestName" placeholder=" " type="text"/>
+<label for="guestName">Nome ospite</label>
+</div>
+<div class="field two-col" id="guestContactRow">
+<div class="subfield field float">
+<input autocomplete="tel" id="guestPhone" placeholder=" " type="tel" inputmode="tel"/>
+<label for="guestPhone">Telefono</label>
+</div>
+<div class="subfield field float">
+<input autocomplete="email" id="guestEmail" placeholder=" " type="email" inputmode="email"/>
+<label for="guestEmail">Email</label>
+</div>
+</div>
+<div class="field two-col" id="guestPeopleRow">
+<div class="subfield field float">
+<input readonly id="guestAdults" class="tap-counter" inputmode="none" min="0" placeholder=" " step="1" type="number"/>
+<label for="guestAdults">Adulti</label>
+</div>
+<div class="subfield field float">
+<input readonly id="guestKidsU10" class="tap-counter" inputmode="none" min="0" placeholder=" " step="1" type="number"/>
+<label for="guestKidsU10">Bambini &lt; 10</label>
+</div>
+</div>
+<div class="field two-col" id="guestDatesRow">
+<div class="subfield field float">
+<input id="guestCheckIn" type="date"/>
+<label for="guestCheckIn">Check-in</label>
+</div>
+<div class="subfield field float">
+<input id="guestCheckOut" type="date"/>
+<label for="guestCheckOut">Check-out</label>
+</div>
+</div>
+<div class="field">
+<div aria-label="Seleziona stanze" class="rooms" id="roomsPicker" role="group">
+<button aria-pressed="false" class="room-dot" data-room="1" type="button">1</button>
+<button aria-pressed="false" class="room-dot" data-room="2" type="button">2</button>
+<button aria-pressed="false" class="room-dot" data-room="3" type="button">3</button>
+<button aria-pressed="false" class="room-dot" data-room="4" type="button">4</button>
+<button aria-pressed="false" class="room-dot" data-room="5" type="button">5</button>
+<button aria-pressed="false" class="room-dot" data-room="6" type="button">6</button>
+</div>
+<div class="rooms-readonly" hidden="" id="roomsReadOnly"></div>
+</div>
 
-    <!-- MODAL: Sposta seduta -->
-    <div class="modal" id="modalMoveSession" aria-hidden="true">
-      <div class="modal-card">
-        <div class="modal-title">Sposta seduta</div>
+<div class="field mgc-row" id="mgcRow">
+  <div class="mgc-divider" aria-hidden="true"></div>
+  <div class="mg-pill" id="mgPill" role="group" aria-label="Matrimonio / G">
+  <button aria-pressed="false" class="room-dot room-dot-marriage" id="roomMarriage" title="Matrimonio" type="button">M</button>
+  <button aria-pressed="false" class="room-dot room-dot-group" id="roomGroup" title="G" type="button">G</button>
+  <button aria-pressed="false" class="room-dot room-dot-colc" id="roomColC" title="C" type="button">C</button>
+</div>
+</div>
+<!-- Multi prenotazioni (stesso nome): blocchi aggiuntivi sotto la prima prenotazione -->
+<div class="guest-multi" hidden="" id="guestMulti"></div>
+<div class="field two-col payment-row total-row">
+  <div class="subfield field float">
+    <input id="guestTotal" type="number" step="0.01" inputmode="decimal" placeholder=" "/>
+    <label for="guestTotal">Importo prenotazione (€)</label>
+  </div>
+  <div class="subfield paywrap">
+<div class="pay-pill pay-pill-text guest-tax-pill" id="guestTaxTotal" aria-label="Totale tassa di soggiorno" hidden><span id="guestTaxTotalVal">€0,00</span></div>
+</div>
+</div>
+<div class="field two-col booking-row">
+<div class="subfield field float">
+<input id="guestBooking" inputmode="decimal" placeholder=" " step="0.01" type="number"/>
+<label for="guestBooking">Importo booking (€)</label>
+</div>
+<div class="subfield paywrap">
+<button class="pay-pill pay-pill-text" id="servicesPillView" type="button" aria-label="Servizi"><span>Servizi</span></button>
+</div>
+</div>
 
-        <div class="label">Terapia</div>
-        <div class="pill-wide" id="moveSessionTherapyName" aria-label="Terapia selezionata"></div>
-
-        <div class="row-tabs" aria-label="Selezione nuova data e ora">
-          <div class="tab-col">
-            <label class="label" for="moveSessionDate">Data</label>
-            <div class="pill-wide pill-tab"><input class="pill-tab-input" id="moveSessionDate" type="date" /></div>
-          </div>
-          <div class="tab-col">
-            <label class="label" for="moveSessionTime">Ora</label>
-            <div class="pill-wide pill-tab"><input class="pill-tab-input" id="moveSessionTime" type="text" inputmode="none" readonly /></div>
-          </div>
-        </div>
-
-        <div class="row2">
-          <button class="pill-btn pill-gray" type="button" id="btnMoveSessionCancel">annulla</button>
-          <button class="pill-btn pill-blue" type="button" id="btnMoveSessionConfirm">sposta</button>
-        </div>
-      </div>
+<div class="field two-col payment-row services-row" id="servicesRow">
+  <div class="subfield field float">
+    <input id="guestServices" type="number" step="0.01" inputmode="decimal" placeholder=" "/>
+    <label for="guestServices">Importo servizi (€)</label>
+  </div>
+  <div class="subfield paywrap">
+    <button class="pay-pill pay-pill-text pay-pill-plus" id="servicesPillEdit" type="button" aria-label="Aggiungi servizio"><span class="plus">+</span></button>
+  </div>
+</div>
+<div class="field two-col payment-row" id="depositRow">
+<div class="subfield field float">
+<input id="guestDeposit" inputmode="decimal" placeholder=" " step="0.01" type="number"/>
+<label for="guestDeposit">Acconto (€)</label>
+</div>
+<div class="subfield paywrap">
+<div aria-label="Tipo acconto" class="pay-pill" id="depositType" role="group">
+<button aria-pressed="true" class="pay-dot pay-cash selected" data-type="contante" title="Contanti" type="button"></button>
+<button aria-pressed="false" class="pay-dot pay-elec" data-type="elettronico" title="Elettronico" type="button"></button>
+<button aria-pressed="false" class="pay-dot pay-receipt" data-receipt="1" title="Ricevuta" type="button"></button>
+</div>
+</div>
+</div>
+<div class="field two-col payment-row" id="saldoRow">
+<div class="subfield field float">
+<input id="guestSaldo" inputmode="decimal" min="0" placeholder="0" step="0.01" type="number"/>
+<label for="guestSaldo">Saldo (€)</label>
+</div>
+<div class="subfield paywrap">
+<div aria-label="Saldo" class="pay-pill" id="saldoType" role="group">
+<button aria-pressed="true" class="pay-dot pay-cash selected" data-type="contante" title="Contanti" type="button"></button>
+<button aria-pressed="false" class="pay-dot pay-elec" data-type="elettronico" title="Elettronico" type="button"></button>
+<button aria-pressed="false" class="pay-dot pay-receipt" data-receipt="1" title="Ricevuta" type="button"></button>
+</div>
+</div>
+</div>
+<div class="field two-col payment-row" id="remainingRow">
+<div class="subfield field float">
+<input id="guestRemaining" inputmode="decimal" min="0" placeholder=" " readonly="" step="0.01" type="number"/>
+<label for="guestRemaining">Rimanenza da pagare (€)</label>
+</div>
+<div class="subfield paywrap">
+<div aria-label="Registrazioni" class="pay-pill" id="regTags" role="group">
+<button aria-pressed="false" class="pay-dot pay-ps" data-flag="ps" title="Polizia di Stato" type="button"></button>
+<span aria-hidden="true" class="pay-dot pay-gap"></span>
+<button aria-pressed="false" class="pay-dot pay-istat" data-flag="istat" title="ISTAT" type="button"></button>
+</div>
+</div>
+</div>
+<div class="services-list-wrap" id="servicesListWrap" hidden>
+  <div class="services-list-card">
+    <div class="services-list-hd">
+      <span class="services-list-title">Servizi</span>
+      <span class="services-list-total" id="servicesListTotal">€0,00</span>
     </div>
-    </div>
-<!-- MODAL: Errore terapia -->
-    <div class="modal modal-error" id="modalTherapyError" aria-hidden="true">
-      <div class="modal-card modal-card-error">
-        <button class="dot-close" id="btnTherapyErrorClose" aria-label="Chiudi"></button>
-        <div class="modal-title">Errore</div>
-        <div class="modal-text" id="therapyErrorMsg">Conflitto terapia.</div>
-      </div>
-    </div>
+    <div class="services-list-body" id="servicesListBody"></div>
+  </div>
+</div>
+<button class="btn primary" id="createGuestCard" type="button">Crea scheda cliente</button>
+</div>
+</div>
+</div>
+</div>
+</section><section aria-label="Ospiti" class="page" hidden="" id="page-ospiti"><div class="content"><div class="ospite-wrap"><div class="card guest-cards-card"><div class="hd"><h2>Ospiti</h2></div><div class="bd">
+<div aria-label="Filtri ospiti" class="guest-filter-grid">
+<div class="guest-filter-row guest-filter-row-1">
+<div aria-label="Oggi" class="field gf-tile gf-today"><button aria-label="Filtra ospiti: oggi" class="gf-today-btn" id="guestToday" type="button">Oggi</button></div>
+<div aria-label="Ordinamento" class="field gf-tile gf-sort">
+<select aria-label="Ordina ospiti per" id="guestSortBy">
+<option value="inserimento">Inserimento</option>
+<option value="arrivo">Arrivo</option>
+<option value="nome">Nome</option>
+</select>
+</div>
+<div aria-label="Ordine crescente/decrescente" class="field gf-tile sort-toggle"><button aria-label="Direzione ordinamento" aria-pressed="false" class="gf-dir gf-dir-full" id="guestSortDir" type="button">↓</button></div>
+</div>
+<div class="guest-filter-row guest-filter-row-2">
+<div aria-label="Da" class="field gf-tile">
+</div>
+<div aria-label="A" class="field gf-tile">
+</div>
+</div>
+</div>
+<div class="guest-cards" id="guestCards"></div></div></div></div></div></section>
+<!-- CALENDARIO -->
+<section aria-label="Calendario" class="page" hidden="" id="page-calendario">
+<div class="content calendar-page">
+<div class="cal-nav">
+<div aria-label="Navigazione calendario" class="cal-nav-row" role="group">
+<div aria-label="Navigazione settimana" class="cal-nav-center">
+<button aria-label="Mese precedente" class="cal-nav-btn" id="calPrevMonthBtn" type="button">
+<svg aria-hidden="true" class="ui-ico" viewbox="0 0 24 24">
+<path d="M15 18l-6-6 6-6"></path>
+</svg>
+</button>
+<button aria-label="Settimana precedente" class="cal-nav-btn" id="calPrevBtn" type="button">
+<svg aria-hidden="true" class="ui-ico" viewbox="0 0 24 24">
+<path d="M15 18l-6-6 6-6"></path>
+</svg>
+</button>
+<button aria-label="Settimana corrente" class="cal-nav-btn" id="calTodayBtn" type="button">
+<svg aria-hidden="true" class="ui-ico" viewbox="0 0 24 24">
+<circle cx="12" cy="12" r="8"></circle>
+<circle cx="12" cy="12" r="2"></circle>
+</svg>
+</button>
+<button aria-label="Settimana successiva" class="cal-nav-btn" id="calNextBtn" type="button">
+<svg aria-hidden="true" class="ui-ico" viewbox="0 0 24 24">
+<path d="M9 18l6-6-6-6"></path>
+</svg>
+</button>
+<button aria-label="Mese successivo" class="cal-nav-btn" id="calNextMonthBtn" type="button">
+<svg aria-hidden="true" class="ui-ico" viewbox="0 0 24 24">
+<path d="M9 18l6-6-6-6"></path>
+</svg>
+</button>
+</div>
+<button aria-label="Calendario mensile" class="cal-nav-btn cal-nav-right" id="calToggleMonthBtn" type="button">
+  <svg aria-hidden="true" class="ui-ico" viewBox="0 0 24 24">
+    <rect x="4" y="5" width="16" height="15" rx="2"></rect>
+    <path d="M8 3v4"></path>
+    <path d="M16 3v4"></path>
+    <path d="M4 9h16"></path>
+    <path d="M8 13h3"></path>
+    <path d="M13 13h3"></path>
+    <path d="M8 17h3"></path>
+    <path d="M13 17h3"></path>
+  </svg>
+</button>
 
-<!-- MODAL: API URL -->
-    <div class="modal" id="modalApi" aria-hidden="true">
-      <div class="modal-card">
-        <div class="modal-title">Collegamento database</div>
-        <div class="modal-text">Incolla l’URL /exec della Web App Google Apps Script.</div>
-        <input class="field" id="apiUrlInput" type="url" placeholder="https://script.google.com/macros/s/.../exec" />
-        <div class="row2">
-          <button class="pill-btn pill-gray" type="button" id="btnApiCancel">chiudi</button>
-          <button class="pill-btn pill-blue" type="button" id="btnApiSave">salva</button>
-        </div>
-      </div>
-    </div>
+<input aria-label="Data" class="cal-date-input" id="calDateInput" type="date"/>
+</div> </div>
+</div>
+<div class="cal-body">
+<div class="cal-week-title" id="calWeekTitle">GENNAIO</div>
+<div class="cal-grid-wrap">
+<div aria-label="Calendario settimanale" class="cal-grid" id="calGrid"></div>
+<div aria-label="Calendario mensile" class="cal-grid cal-grid-month" id="calGridMonth" hidden></div>
+</div>
+</div>
+<div aria-label="Legenda letti" class="cal-legend">
+<div class="cal-legend-item"><span aria-hidden="true" class="cal-legend-dot bed-dot bed-dot-m"></span><span>Matrimoniale</span></div>
+<div class="cal-legend-item"><span aria-hidden="true" class="cal-legend-dot bed-dot bed-dot-s"></span><span>Singolo</span></div>
+<div class="cal-legend-item"><span aria-hidden="true" class="cal-legend-dot bed-dot bed-dot-c"></span><span>Culla</span></div>
+</div>
+</section>
+<section class="page" id="page-pulizie" style="display:none;">
+<div class="hd">
+<div class="title"></div>
+</div>
+<div class="bd">
+<div class="clean-topbar">
+<div class="clean-top-left"></div>
+<div aria-label="Navigazione giorno" class="clean-nav" role="group">
+<button aria-label="Giorno precedente" class="btn ghost" id="cleanPrev" type="button">←</button>
+<button aria-label="Oggi" class="btn" id="cleanToday" type="button">Oggi</button>
+<button aria-label="Giorno successivo" class="btn ghost" id="cleanNext" type="button">→</button>
+</div>
+<div class="clean-top-actions"></div>
+</div>
+<div class="clean-mainGroup">
+<div class="clean-date" id="cleanDateLabel">1 Gennaio 2026</div>
+<!-- Griglia: riga header (MAT..TAP) + 6 righe stanze (1..6) = 7 righe totali.
+         La prima cella in alto a sinistra è vuota. -->
+<div class="clean-grid-wrap">
+<div class="clean-grid" id="cleanGrid">
+<div aria-label="Reset pulizie" class="c cell head corner clean-reset-corner" id="cleanResetAll" role="button" tabindex="0"><svg aria-hidden="true" class="cr-icon" viewBox="0 0 24 24"><path d="M3 6h18" /><path d="M6 6l1 14h10l1-14" /><path d="M9 10v6" /><path d="M12 10v6" /><path d="M15 10v6" /><path d="M8 6l1-2h6l1 2" /></svg></div>
+<div class="c cell head">MAT</div>
+<div class="c cell head">SIN</div>
+<div class="c cell head">FED</div>
+<div class="c cell head">TDO</div>
+<div class="c cell head">TFA</div>
+<div class="c cell head">TBI</div>
+<div class="c cell head">TAP</div>
+<div class="c cell head">TPI</div>
+<div class="c cell room r1">1</div>
+<div class="c cell slot" data-col="MAT" data-room="1"></div>
+<div class="c cell slot" data-col="SIN" data-room="1"></div>
+<div class="c cell slot" data-col="FED" data-room="1"></div>
+<div class="c cell slot" data-col="TDO" data-room="1"></div>
+<div class="c cell slot" data-col="TFA" data-room="1"></div>
+<div class="c cell slot" data-col="TBI" data-room="1"></div>
+<div class="c cell slot" data-col="TAP" data-room="1"></div>
+<div class="c cell slot" data-col="TPI" data-room="1"></div>
+<div class="c cell room r2">2</div>
+<div class="c cell slot" data-col="MAT" data-room="2"></div>
+<div class="c cell slot" data-col="SIN" data-room="2"></div>
+<div class="c cell slot" data-col="FED" data-room="2"></div>
+<div class="c cell slot" data-col="TDO" data-room="2"></div>
+<div class="c cell slot" data-col="TFA" data-room="2"></div>
+<div class="c cell slot" data-col="TBI" data-room="2"></div>
+<div class="c cell slot" data-col="TAP" data-room="2"></div>
+<div class="c cell slot" data-col="TPI" data-room="2"></div>
+<div class="c cell room r3">3</div>
+<div class="c cell slot" data-col="MAT" data-room="3"></div>
+<div class="c cell slot" data-col="SIN" data-room="3"></div>
+<div class="c cell slot" data-col="FED" data-room="3"></div>
+<div class="c cell slot" data-col="TDO" data-room="3"></div>
+<div class="c cell slot" data-col="TFA" data-room="3"></div>
+<div class="c cell slot" data-col="TBI" data-room="3"></div>
+<div class="c cell slot" data-col="TAP" data-room="3"></div>
+<div class="c cell slot" data-col="TPI" data-room="3"></div>
+<div class="c cell room r4">4</div>
+<div class="c cell slot" data-col="MAT" data-room="4"></div>
+<div class="c cell slot" data-col="SIN" data-room="4"></div>
+<div class="c cell slot" data-col="FED" data-room="4"></div>
+<div class="c cell slot" data-col="TDO" data-room="4"></div>
+<div class="c cell slot" data-col="TFA" data-room="4"></div>
+<div class="c cell slot" data-col="TBI" data-room="4"></div>
+<div class="c cell slot" data-col="TAP" data-room="4"></div>
+<div class="c cell slot" data-col="TPI" data-room="4"></div>
+<div class="c cell room r5">5</div>
+<div class="c cell slot" data-col="MAT" data-room="5"></div>
+<div class="c cell slot" data-col="SIN" data-room="5"></div>
+<div class="c cell slot" data-col="FED" data-room="5"></div>
+<div class="c cell slot" data-col="TDO" data-room="5"></div>
+<div class="c cell slot" data-col="TFA" data-room="5"></div>
+<div class="c cell slot" data-col="TBI" data-room="5"></div>
+<div class="c cell slot" data-col="TAP" data-room="5"></div>
+<div class="c cell slot" data-col="TPI" data-room="5"></div>
+<div class="c cell room r6">6</div>
+<div class="c cell slot" data-col="MAT" data-room="6"></div>
+<div class="c cell slot" data-col="SIN" data-room="6"></div>
+<div class="c cell slot" data-col="FED" data-room="6"></div>
+<div class="c cell slot" data-col="TDO" data-room="6"></div>
+<div class="c cell slot" data-col="TFA" data-room="6"></div>
+<div class="c cell slot" data-col="TBI" data-room="6"></div>
+<div class="c cell slot" data-col="TAP" data-room="6"></div>
+<div class="c cell slot" data-col="TPI" data-room="6"></div>
+<div class="c cell room rres">RES</div>
+<div class="c cell slot" data-col="MAT" data-room="RES"></div>
+<div class="c cell slot" data-col="SIN" data-room="RES"></div>
+<div class="c cell slot" data-col="FED" data-room="RES"></div>
+<div class="c cell slot" data-col="TDO" data-room="RES"></div>
+<div class="c cell slot" data-col="TFA" data-room="RES"></div>
+<div class="c cell slot" data-col="TBI" data-room="RES"></div>
+<div class="c cell slot" data-col="TAP" data-room="RES"></div>
+<div class="c cell slot" data-col="TPI" data-room="RES"></div>
+</div>
+</div>
+<!-- Ore operatori (max 3) -->
+<div class="clean-ops" id="cleanOps">
+<div class="clean-op-row" data-op="1" style="display:none;">
+<div aria-label="Operatore 1" class="clean-op-name" id="op1Name"></div>
+<button aria-label="Ore Operatore 1" class="clean-hour-dot is-zero" data-value="0" id="op1Hours" type="button"></button>
+</div>
+<div class="clean-op-row" data-op="2" style="display:none;">
+<div aria-label="Operatore 2" class="clean-op-name" id="op2Name"></div>
+<button aria-label="Ore Operatore 2" class="clean-hour-dot is-zero" data-value="0" id="op2Hours" type="button"></button>
+</div>
+<div class="clean-op-row" data-op="3" style="display:none;">
+<div aria-label="Operatore 3" class="clean-op-name" id="op3Name"></div>
+<button aria-label="Ore Operatore 3" class="clean-hour-dot is-zero" data-value="0" id="op3Hours" type="button"></button>
+</div>
+</div>
 
-    <!-- MODAL: Aggiungi società -->
-    <div class="modal" id="modalSoc" aria-hidden="true">
-      <div class="modal-card">
-        <button class="dot-close" id="btnSocClose" aria-label="Chiudi"></button>
-        <div class="modal-title">Aggiungi società</div>
+<div class="clean-reset-wrap" id="cleanResetWrap" hidden></div>
 
-        <input class="field" id="socNomeInput" type="text" placeholder="Nome società" />
-
-        <input class="field" id="socL1Input" type="number" inputmode="decimal" step="0.01" placeholder="L1 (€)" />
-        <input class="field" id="socL2Input" type="number" inputmode="decimal" step="0.01" placeholder="L2 (€)" />
-        <input class="field" id="socL3Input" type="number" inputmode="decimal" step="0.01" placeholder="L3 (€)" />
-
-        <div class="tag-dots" id="socTagDots" role="group" aria-label="Tag società">
-          <button class="tag-dot t1" type="button" data-tag="0" aria-label="Tag 1"></button>
-          <button class="tag-dot t2" type="button" data-tag="1" aria-label="Tag 2"></button>
-          <button class="tag-dot t3" type="button" data-tag="2" aria-label="Tag 3"></button>
-          <button class="tag-dot t4" type="button" data-tag="3" aria-label="Tag 4"></button>
-          <button class="tag-dot t5" type="button" data-tag="4" aria-label="Tag 5"></button>
-          <button class="tag-dot t6" type="button" data-tag="5" aria-label="Tag 6"></button>
-        </div>
-
-        <div class="row3">
-                    <button class="pill-btn pill-red" type="button" id="btnSocDelete">modifica</button>
-          <button class="pill-btn pill-blue" type="button" id="btnSocSave">salva</button>
-        </div>
-
-        <div class="soc-delete-panel" id="socDeletePanel" hidden>
-          <div class="soc-delete-title">Società</div>
-          <div class="soc-delete-list" id="socDeleteList" aria-label="Elenco società"></div>
-        </div>
-      </div>
-    </div>
-    <div class="modal" id="modalPickMonth" aria-hidden="true">
-      <div class="modal-card">
-        <button class="dot-close" id="btnPickMonthClose" aria-label="Chiudi"></button>
-        <div class="modal-title">Mese</div>
-        <div class="list" id="monthPickList" aria-label="Elenco mesi"></div>
-      </div>
-    </div>
-
-
-    <!-- TOAST -->
-    <div class="toast" id="toast" aria-live="polite" aria-atomic="true"></div>
-
-  
-    <!-- STATISTICHE -->
-    <section class="view" id="viewStats" aria-label="Statistiche">
-      <div class="page">
-        <div class="page-title">Fatturati &amp; Accessi</div>
-
-        <div class="stats-controls" aria-label="Filtri statistiche">
-          <button class="stats-select" id="btnStatsMonth" type="button" aria-label="Seleziona mese">
-            <span class="stats-select-text" id="lblStatsMonth">Mese</span>
-            <span class="stats-select-badge" aria-hidden="true">
-              <svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"></path></svg>
-            </span>
-          </button>
-
-          <button class="stats-select" id="btnStatsSoc" type="button" aria-label="Seleziona società">
-            <span class="stats-select-text" id="lblStatsSoc">Società</span>
-            <span class="stats-select-badge" aria-hidden="true">
-              <svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"></path></svg>
-            </span>
-          </button>
-
-          <div class="stats-soc-dots" id="statsSocDots" aria-label="Selezione rapida società">
-            <!-- pallini società generati da JS -->
-          </div>
-          <div class="stats-divider" aria-hidden="true"></div>
-
-          <div class="stats-levels" id="statsLevelDots" aria-label="Fascia prezzo">
-            <!-- bottoni livello generati da JS -->
-          </div>
-        </div>
-
-        
-        <div class="stats-summary-row" aria-label="Totali selezione">
-          <div class="stats-summary-pill" aria-label="Totale accessi">
-<div class="stats-summary-value" id="statsTotalAccessi">0</div>
-          </div>
-          <div class="stats-summary-pill" aria-label="Totale fatturato">
-<div class="stats-summary-value" id="statsTotalImporto">0 €</div>
-          </div>
-        </div>
-
-<div class="stats-table-card" id="statsTableCard" aria-label="Tabella fatturati e accessi">
-          <div class="stats-table-head" aria-hidden="true">
-            <div class="st-c1">PAZIENTE</div>
-            <div class="st-c3">ACC</div>
-            <div class="st-c4">€</div>
-          </div>
-          <div class="stats-table-body" id="statsTableBody" aria-label="Elenco"></div>
-
-        </div>
-      </div>
-    </section>
-
+</div>
+</div>
+</section>
 </main>
+<div class="toast" id="toast"></div>
+<section class="page" hidden="" id="page-orepulizia">
+<div class="opcal-wrap">
+<div aria-label="Riepilogo ore pulizia" class="opcal-group">
+<div class="opcal-group-hd">
+<div class="opcal-titleMain" id="opcalTitleMain">—</div>
+<div aria-label="Totali ore e benzina" class="opcal-stats">
+<div class="opcal-stat opcal-stat--blue">
+<div class="opcal-statLabel">Ore totali</div>
+<div class="opcal-statValue" id="opcalTotalHours">—</div>
+</div>
+<div class="opcal-stat opcal-stat--beige">
+<div class="opcal-statLabel">Spese Benzina</div>
+<div class="opcal-statValue" id="opcalDaysWithHours">—</div>
+</div>
+</div>
+</div>
+<div class="opcal-group-bd">
+<div aria-hidden="true" class="opcal-weekdays">
+<div class="opcal-weekday">L</div>
+<div class="opcal-weekday">M</div>
+<div class="opcal-weekday">M</div>
+<div class="opcal-weekday">G</div>
+<div class="opcal-weekday">V</div>
+<div class="opcal-weekday">S</div>
+<div class="opcal-weekday">D</div>
+</div>
+<div aria-label="Calendario ore pulizia" class="opcal-grid" id="opcalGrid"></div>
+<div aria-label="Filtri ore pulizia" class="opcal-filterRow opcal-filterRow-bottom">
+<label class="opcal-filter">
+<select aria-label="Mese" id="opcalMonthSelect"></select>
+</label>
+<label class="opcal-filter">
+<select aria-label="Operatore" id="opcalOperatorSelect"></select>
+</label>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section class="page" hidden="" id="page-lavanderia">
+<div class="card card--plain">
+<div class="hd">
+<h2>Lavanderia</h2>
+<div class="hd-actions">
+</div>
+</div>
+<div class="bd">
+<div class="laundry-sub">
+<div class="laundry-hint" id="laundryHint"></div>
+</div>
+<div aria-label="Intervallo report lavanderia" class="laundry-range">
+<label aria-label="Data inizio" class="laundry-range-field">
+<span class="laundry-dateText" id="laundryFromText">--/--/--</span>
+<input aria-label="Da" id="laundryFrom" type="date"/>
+</label>
+<label aria-label="Data fine" class="laundry-range-field">
+<span class="laundry-dateText" id="laundryToText">--/--/--</span>
+<input aria-label="A" id="laundryTo" type="date"/>
+</label>
+<button aria-label="Genera report lavanderia" class="btn primary laundry-range-btn" id="btnLaundryGenerate" type="button">Genera report</button>
+</div>
+<!-- Tab report: mostra SOLO il periodo selezionato (bold) -->
+<div class="laundry-reportChip" hidden="" id="laundryPeriodLabel">—</div>
+<div aria-label="Totali lavanderia" class="laundry-grid" id="laundryGrid">
+<div class="laundry-tile" data-key="MAT">
+<div class="laundry-tile-top">
+<div class="laundry-code">MAT</div>
+<div class="laundry-label" id="laundryLblMAT">Matr.</div>
+</div>
+<div class="laundry-value" id="laundryValMAT">0</div>
+</div>
+<div class="laundry-tile" data-key="SIN">
+<div class="laundry-tile-top">
+<div class="laundry-code">SIN</div>
+<div class="laundry-label" id="laundryLblSIN">Sing.</div>
+</div>
+<div class="laundry-value" id="laundryValSIN">0</div>
+</div>
+<div class="laundry-tile" data-key="FED">
+<div class="laundry-tile-top">
+<div class="laundry-code">FED</div>
+<div class="laundry-label" id="laundryLblFED">Fed.</div>
+</div>
+<div class="laundry-value" id="laundryValFED">0</div>
+</div>
+<div class="laundry-tile" data-key="TDO">
+<div class="laundry-tile-top">
+<div class="laundry-code">TDO</div>
+<div class="laundry-label" id="laundryLblTDO">Doccia</div>
+</div>
+<div class="laundry-value" id="laundryValTDO">0</div>
+</div>
+<div class="laundry-tile" data-key="TFA">
+<div class="laundry-tile-top">
+<div class="laundry-code">TFA</div>
+<div class="laundry-label" id="laundryLblTFA">Faccia</div>
+</div>
+<div class="laundry-value" id="laundryValTFA">0</div>
+</div>
+<div class="laundry-tile" data-key="TBI">
+<div class="laundry-tile-top">
+<div class="laundry-code">TBI</div>
+<div class="laundry-label" id="laundryLblTBI">Bagno</div>
+</div>
+<div class="laundry-value" id="laundryValTBI">0</div>
+</div>
+<div class="laundry-tile" data-key="TAP">
+<div class="laundry-tile-top">
+<div class="laundry-code">TAP</div>
+<div class="laundry-label" id="laundryLblTAP">Tapp.</div>
+</div>
+<div class="laundry-value" id="laundryValTAP">0</div>
+</div>
+<div class="laundry-tile" data-key="TPI">
+<div class="laundry-tile-top">
+<div class="laundry-code">TPI</div>
+<div class="laundry-label" id="laundryLblTPI">Picc.</div>
+</div>
+<div class="laundry-value" id="laundryValTPI">0</div>
+</div>
+<div aria-hidden="true" class="laundry-tile laundry-tile--empty"></div>
+</div>
+<!-- Print-friendly area -->
+<div aria-hidden="true" class="laundry-print" id="laundryPrintArea">
+<h3 class="laundry-print-title">Resoconto Lavanderia</h3>
+<div class="laundry-print-range" id="laundryPrintRange">—</div>
+<table aria-label="Tabella totali lavanderia" class="laundry-table">
+<thead>
+<tr>
+<th>Categoria</th>
+<th>Totale</th>
+</tr>
+</thead>
+<tbody id="laundryPrintBody"></tbody>
+</table>
+</div>
+<div class="laundry-history-wrap">
+<div class="list" id="laundryHistory"></div>
+</div>
+</div>
+</div>
+</section>
+<!-- Loader globale -->
+<div class="loading-overlay" hidden="" id="loadingOverlay">
+<div class="loading-shell">
+<div aria-label="Caricamento" aria-live="polite" class="loading-card" role="status">
+<div aria-hidden="true" class="loading-hourglass"><svg aria-hidden="true" class="ui-ico" viewbox="0 0 24 24">
+<path d="M7 3h10"></path>
+<path d="M7 21h10"></path>
+<path d="M8 3c0 4 4 5 4 9s-4 5-4 9"></path>
+<path d="M16 3c0 4-4 5-4 9s4 5 4 9"></path>
+</svg></div>
+</div>
+</div>
+</div>
+<script defer="" src="./config.js?v=dDAE_2.205"></script>
+<script defer="" src="./app.js?v=dDAE_2.205"></script>
+<!-- TAX REPORT MODAL -->
+<div aria-hidden="true" class="modal" hidden="" id="taxReportModal">
+<div aria-labelledby="taxReportTitle" aria-modal="true" class="modal-card tax-report-card" role="dialog">
+<h3 id="taxReportTitle" style="margin:0 0 10px 0;">Report tassa di soggiorno</h3>
+<pre class="tax-report-text" id="taxReportText"></pre>
+<div class="row" style="justify-content:flex-end; gap:10px; margin-top:12px;">
+<button class="btn primary" id="taxReportCopyBtn" type="button">Copia</button>
+<button class="btn ghost" id="taxReportCloseBtn" type="button">Chiudi</button>
+</div>
+</div>
+</div>
+<!-- ROOM CONFIG MODAL -->
+<div class="modal" hidden="" id="roomConfigModal">
+<div class="modal-card">
+<h3 id="roomConfigTitle"></h3>
+<div class="row"><span>Matrimoniale</span><div class="dots" id="rc_matrimoniale"></div></div>
+<div class="row"><span>Letti singoli</span><div class="dots" id="rc_singoli"></div></div>
+<div class="row"><span>Culla</span><div class="dots" id="rc_culla"></div></div>
+<div class="row" style="justify-content:flex-end; gap:10px; margin-top:12px;">
+<button class="btn ghost" id="rc_cancel" type="button">Annulla</button>
+<button class="btn primary" id="rc_save" type="button">Conferma</button>
+</div>
+</div>
+</div>
+<!-- OPERATORE MODAL (crea / modifica) -->
+<div aria-hidden="true" class="modal" hidden="" id="operatorModal">
+<div aria-modal="true" class="modal-card operator-card" role="dialog">
+<div class="operator-hd">
+<div class="operator-title" id="operatorModalTitle">Operatore</div>
+<button aria-label="Chiudi" class="btn ghost operator-close" id="operatorModalClose" type="button">✕</button>
+</div>
+<div class="operator-menu" id="operatorModalMenu">
+<button class="btn primary operator-primary" id="operatorCreateBtn" type="button">Crea operatore</button>
+<button class="btn ghost operator-ghost" id="operatorEditBtn" type="button">Modifica operatore</button>
+<button class="btn ghost operator-ghost" id="operatorDeleteBtn" type="button">Elimina operatore</button>
+</div>
+<div class="operator-form" hidden="" id="operatorModalForm">
+<div aria-live="polite" class="operator-msg" id="operatorModalMsg" role="status"></div>
+<div class="field float" style="margin-top:10px;">
+<input autocomplete="off" id="opFormUsername" placeholder=" "/>
+<label for="opFormUsername">Username operatore</label>
+</div>
+<div class="field float" style="margin-top:10px;">
+<input id="opFormPassword" placeholder=" " type="password"/>
+<label for="opFormPassword" id="opFormPasswordLabel">Password operatore</label>
+</div>
+<div class="field float" style="margin-top:10px;">
+<input id="opFormOwnerPassword" placeholder=" " type="password"/>
+<label for="opFormOwnerPassword">Password owner</label>
+</div>
+<div class="row" style="justify-content:flex-end; gap:10px; margin-top:12px;">
+<button class="btn ghost" id="opFormBack" type="button">Indietro</button>
+<button class="btn primary" id="opFormConfirm" type="button">Conferma</button>
+</div>
+</div>
+</div>
+</div>
+<!-- PULIZIE: HEADER INFO MODAL -->
+<div aria-label="Descrizione biancheria" aria-modal="true" class="modal modal-center" hidden="" id="cleanHeaderModal" role="dialog">
+<div class="modal-card clean-info-card">
+<button aria-label="Chiudi" class="btn ghost clean-info-close" id="cleanHeaderClose" type="button">✕</button>
+<div class="clean-info-text" id="cleanHeaderText">—</div>
+</div>
+</div>
+<!-- STATISTICHE: PIE MODAL -->
+<div aria-hidden="true" class="modal" hidden="" id="statPieModal">
+<div aria-modal="true" class="modal-card stat-pie-card" role="dialog">
+<button aria-label="Chiudi" class="stat-modal-close" id="statPieClose" type="button">✕</button>
+<div class="stat-pie-title">Grafico</div>
+<div class="pie-wrap">
+<canvas id="statPieCanvas"></canvas>
+</div>
+<div class="pie-legend" id="statPieLegend"></div>
+</div>
+</div>
+<!-- STATISTICHE: INCASSI MENSILI PIE MODAL -->
+<div aria-hidden="true" class="modal" hidden="" id="statMensiliPieModal">
+<div aria-modal="true" class="modal-card stat-pie-card" role="dialog">
+<button aria-label="Chiudi" class="stat-modal-close" id="statMensiliPieClose" type="button">✕</button>
+<div class="stat-pie-title">Grafico</div>
+<div class="pie-wrap">
+<canvas id="statMensiliPieCanvas"></canvas>
+</div>
+<div class="pie-legend" id="statMensiliPieLegend"></div>
+</div>
+</div>
+<!-- STATISTICHE: SPESE GENERALI PIE MODAL -->
+<div aria-hidden="true" class="modal" hidden="" id="statSpesePieModal">
+<div aria-modal="true" class="modal-card stat-pie-card" role="dialog">
+<button aria-label="Chiudi" class="stat-modal-close" id="statSpesePieClose" type="button">✕</button>
+<div class="stat-pie-title">Grafico</div>
+<div class="pie-wrap">
+<canvas id="statSpesePieCanvas"></canvas>
+</div>
+<div class="pie-legend" id="statSpesePieLegend"></div>
+</div>
+</div>
+<!-- IRAP: popup percentuale -->
+<div aria-hidden="true" class="modal modal-center" hidden="" id="irapModal">
+<div class="modal-card">
+<div style="font-weight:950;font-size:18px;letter-spacing:.2px;margin-bottom:12px;">IRAP (%)</div>
+<div class="field float">
+<input id="irapPctInput" inputmode="decimal" placeholder=" "/>
+<label for="irapPctInput">Percentuale IRAP</label>
+</div>
+<div class="auth-action-row" style="margin-top:14px;">
+<button class="auth-btn auth-btn-gray" id="btnIrapCancel" type="button">annulla</button>
+<button class="auth-btn auth-btn-orange" id="btnIrapSave" type="button">salva</button>
+</div>
+</div>
+</div>
+<!-- AMMINISTRATORE: popup dati (compenso + TFM) -->
+<div aria-hidden="true" class="modal modal-center" hidden="" id="adminInputsModal">
+<div aria-modal="true" class="modal-card receipt-modal-card" role="dialog">
+<button aria-label="Chiudi" class="stat-modal-close" id="adminInputsClose" type="button">✕</button>
+<div class="stat-pie-title">Amministratore</div>
+<div class="fin-card" style="padding:14px;">
+<div class="field float" style="margin-top:0;">
+<input id="adminCompensoInput" inputmode="decimal" placeholder=" "/>
+<label for="adminCompensoInput">Compenso amministratore (Lordo)</label>
+</div>
+<div class="field float" style="margin-top:12px;">
+<input id="adminTfmInput" inputmode="decimal" placeholder=" "/>
+<label for="adminTfmInput">Accantonamento TFM</label>
+</div>
+<div class="auth-action-row" style="margin-top:12px;">
+<button class="auth-btn auth-btn-orange" id="btnAdminSave" type="button">salva</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- HOME: ricevute mancanti (aperto solo da pulsante) -->
+<div aria-hidden="true" class="modal modal-center" hidden="" id="receiptDueModal">
+<div aria-modal="true" class="modal-card receipt-modal-card" role="dialog">
+<button aria-label="Chiudi" class="stat-modal-close" id="receiptDueClose" type="button">✕</button>
+<div class="stat-pie-title" id="receiptDueTitle">Ricevute mancanti</div>
+<div class="receipt-list" id="receiptDueList"></div>
+</div>
+</div>
+
+<!-- YES/NO CONFIRM MODAL -->
+<div aria-hidden="true" class="modal modal-center" hidden="" id="confirmYesNoModal">
+  <div aria-label="Conferma" aria-modal="true" class="modal-card confirm-card" role="dialog">
+    <div class="confirm-text" id="confirmYesNoText">—</div>
+    <div class="row" style="justify-content:center; gap:12px; margin-top:14px;">
+      <button class="btn primary" id="confirmYesNoYes" type="button">Sì</button>
+      <button class="btn ghost" id="confirmYesNoNo" type="button">No</button>
+    </div>
+  </div>
+</div>
 
 
-    <!-- MODAL: Report (sola lettura) -->
-    <div class="modal" id="modalReport" aria-hidden="true">
-      <div class="modal-card">
-        <div class="modal-title">Report</div>
-        <div class="report-frame-wrap">
-          <iframe id="reportFrame" class="report-frame" title="Report" sandbox="allow-same-origin"></iframe>
-        </div>
-        <div class="report-actions">
-          <button type="button" class="month-report-btn" id="btnReportClose">Chiudi</button>
-          <button type="button" class="month-report-btn" id="btnReportPrint">Stampa</button>
-        </div>
+<!-- PISCINA MODAL -->
+<div aria-hidden="true" class="modal modal-center" hidden="" id="piscinaModal">
+  <div aria-label="Dettaglio report piscina" aria-modal="true" class="modal-card piscina-modal-card" role="dialog">
+    <div class="clean-info-title" id="piscinaModalTitle">Report piscina —</div>
+    <div class="piscina-modal-body">
+      <div class="piscina-field">
+        <div class="piscina-k">Cloro attivo libero</div>
+        <div class="piscina-v" id="pmCloroLibero">—</div>
+      </div>
+      <div class="piscina-field">
+        <div class="piscina-k">Cloro attivo combinato</div>
+        <div class="piscina-v" id="pmCloroComb">—</div>
+      </div>
+      <div class="piscina-field">
+        <div class="piscina-k">pH</div>
+        <div class="piscina-v" id="pmPh">—</div>
+      </div>
+      <div class="piscina-field">
+        <div class="piscina-k">Temperatura acqua</div>
+        <div class="piscina-v" id="pmTemp">—</div>
+      </div>
+      <div class="piscina-field piscina-field-meta">
+        <div class="piscina-k">Info</div>
+        <div class="piscina-v" id="pmMeta">—</div>
+      </div>
+
+      <div class="row" style="justify-content:center; margin-top:6px;">
+        <button class="btn primary" id="piscinaModalClose" type="button">Chiudi</button>
       </div>
     </div>
+  </div>
+</div>
 
-  <script src="./config.js"></script>
-  <script src="./app.js?v=1.127"></script>
+<div class="modal modal-center" id="servicesModal" hidden aria-hidden="true">
+  <div class="modal-card services-modal-card" role="dialog" aria-label="Aggiungi servizio">
+    <button class="services-modal-close" id="servicesModalClose" type="button" aria-label="Chiudi"><span class="x">×</span></button>
+    <div class="services-modal-body">
+      <div class="field float">
+        <input id="svcName" type="text" placeholder=" " autocomplete="off"/>
+        <label for="svcName">Servizio</label>
+      </div>
+      <div class="field float">
+        <input id="svcAmount" type="number" step="0.01" inputmode="decimal" placeholder=" "/>
+        <label for="svcAmount">Importo (€)</label>
+      </div>
+      <div class="services-modal-actions">
+        <button class="btn" id="svcCancel" type="button">Cancella</button>
+        <button class="btn primary" id="svcSave" type="button">Salva</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
