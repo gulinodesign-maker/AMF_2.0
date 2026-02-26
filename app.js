@@ -1,7 +1,7 @@
-/* AMF_1.127 */
+/* AMF_1.131 */
 (() => {
-    const BUILD = "AMF_1.127";
-    const DISPLAY = "1.127";
+    const BUILD = "AMF_1.131";
+    const DISPLAY = "1.131";
 
   // --- Helpers
   const $ = (sel) => document.querySelector(sel);
@@ -2362,7 +2362,7 @@ function paintCalendarSlots(slots) {
 
   calBody.querySelectorAll(".cal-cell").forEach((cell) => {
     const dayNum = parseInt(cell.dataset.day || "0", 10);
-    const t = cell.dataset.time || "";
+    const t = normTime(cell.dataset.time || "");
     const key = `${dayNum}|${t}`;
     const info = slots.get(key);
 
@@ -2900,9 +2900,6 @@ async function ensurePatientsForCalendar() {
       const c = calColorForDay(d);
       cell.style.backgroundColor = rgba(c, 0.25);
 
-      // Double-tap state
-      let tapTimer = null;
-
       const resolveEffectiveFrom_ = (pid) => {
         let effective_from_date = "";
         let effective_from_time = "";
@@ -2980,97 +2977,28 @@ async function ensurePatientsForCalendar() {
           return;
         }
 
-        const slotKey = `${cell.dataset.day}|${cell.dataset.time}`;
+        const dayNum = parseInt(cell.dataset.day || "0", 10);
+        const t = normTime(cell.dataset.time || "");
+        const slotKey = `${dayNum}|${t}`;
         const info = calSlotPatients && calSlotPatients.get ? calSlotPatients.get(slotKey) : null;
         const ids = info && Array.isArray(info.ids) ? info.ids.filter((x) => x != null) : [];
         if (ids.length === 0) return;
 
-        // Doppio tap: cancella. Singolo tap: apre scheda.
-        if (tapTimer) {
-          clearTimeout(tapTimer);
-          tapTimer = null;
+        if (ids.length !== 1) { toast("Più pazienti in questo slot"); return; }
 
-          if (ids.length !== 1) { toast("Più pazienti in questo slot"); return; }
-          void doDeleteSlot(ids[0]);
-          return;
-        }
-
-        tapTimer = setTimeout(async () => {
-          tapTimer = null;
-
-          if (ids.length !== 1) {
-            toast("Più pazienti in questo slot");
-            return;
-          }
-          const pid = ids[0];
-          const patients = await ensurePatientsForCalendar();
-          const p = (patients || []).find((x) => String(x.id) === String(pid));
-          if (!p) { toast("Paziente non trovato"); return; }
-          openPatientExisting(p);
-        }, 260);
-      });
-
-      // Desktop fallback
-      cell.addEventListener("dblclick", (e) => {
-        if (cell.dataset.suppressClick === "1") {
-          cell.dataset.suppressClick = "";
-          e.preventDefault();
-          e.stopPropagation();
-          return;
-        }
-        const slotKey = `${cell.dataset.day}|${cell.dataset.time}`;
-        const info = calSlotPatients && calSlotPatients.get ? calSlotPatients.get(slotKey) : null;
-        const ids = info && Array.isArray(info.ids) ? info.ids.filter((x) => x != null) : [];
-        if (ids.length !== 1) return;
-        void doDeleteSlot(ids[0]);
-      });
-      // Long-press (0.5s): apre popup per spostare UNA seduta su uno slot vuoto
-      let lpTimer = null;
-
-      const clearLP = () => { if (lpTimer) { clearTimeout(lpTimer); lpTimer = null; } };
-
-      cell.addEventListener("pointerdown", (ev) => {
-        // Non avviare su celle vuote o disabilitate
-        if (cell.classList.contains("disabled")) return;
-
-        clearLP();
-
-        const pointerId = ev.pointerId;
-
-        lpTimer = setTimeout(() => {
-          const slotKey = `${cell.dataset.day}|${cell.dataset.time}`;
-          const info = calSlotPatients && calSlotPatients.get ? calSlotPatients.get(slotKey) : null;
-          const ids = info && Array.isArray(info.ids) ? info.ids.filter((x) => x != null) : [];
-          if (!ids.length) return;
-
-          if (ids.length !== 1) { toast("Più pazienti in questo slot"); return; }
-
-          const pid = ids[0];
-
-          // evita click al rilascio
-          try { cell.dataset.suppressClick = "1"; } catch (_) {}
-
-          openMoveSessionModal_({
-            pid,
-            fromDay: parseInt(cell.dataset.day || "0", 10),
-            fromTime: String(cell.dataset.time || "")
+        const names = info && Array.isArray(info.names) ? info.names.filter(Boolean) : [];
+        const title = names.length ? String(names[0]) : "Paziente";
+        try {
+          (window.openCalCellActionsModal_ || openCalCellActionsModal_)({
+            pid: ids[0],
+            fromDay: dayNum,
+            fromTime: t,
+            title
           });
-
-          try { cell.setPointerCapture(pointerId); } catch (_) {}
-        }, 500);
+        } catch (_) {}
       });
 
-      cell.addEventListener("pointerup", () => {
-        clearLP();
-      });
-      cell.addEventListener("pointercancel", () => {
-        clearLP();
-      });
-      cell.addEventListener("pointerleave", () => {
-        clearLP();
-      });
-
-frag.appendChild(cell);
+      frag.appendChild(cell);
     }
   }
   calBody.appendChild(frag);
@@ -3381,7 +3309,148 @@ const therapyEl = $("#moveSessionTherapyName");
         if (k === "Enter" || k === " ") open(e);
       });
     }
+  
+
+  // ---- Calendario: popup azioni cella (unifica click / modifica / elimina)
+  let calCellActionsState = null;
+
+  function closeCalCellActionsModal_() {
+    const modal = $("#modalCalCellActions");
+    if (!modal) return;
+    modal.classList.remove("show");
+    modal.setAttribute("aria-hidden", "true");
+    calCellActionsState = null;
+  }
+
+  function openCalCellActionsModal_(opts) {
+    const modal = $("#modalCalCellActions");
+    if (!modal) return;
+
+    const titleEl = $("#calCellActionsTitle");
+
+    const pid = opts && opts.pid != null ? String(opts.pid) : "";
+    const fromDay = opts && opts.fromDay != null ? parseInt(opts.fromDay, 10) : 0;
+    const fromTime = normTime(opts && opts.fromTime != null ? opts.fromTime : "");
+    const title = opts && opts.title != null ? String(opts.title) : "";
+
+    if (!pid || !fromDay || !fromTime) return;
+
+    calCellActionsState = { pid, fromDay, fromTime };
+
+    try { if (titleEl) titleEl.textContent = title || "Paziente"; } catch (_) {}
+
+    modal.classList.add("show");
+    modal.setAttribute("aria-hidden", "false");
+  }
+
+  // Expose for safety (in caso di handler esterni)
+  try { window.openCalCellActionsModal_ = openCalCellActionsModal_; } catch (_) {}
+
+
+  function resolveEffectiveFromBySlot_(pid, fromDay, fromTime) {
+    let effective_from_date = "";
+    let effective_from_time = "";
+    try {
+      const year = calSelectedDate.getFullYear();
+      const month = calSelectedDate.getMonth();
+      const d = new Date(year, month, parseInt(fromDay, 10));
+      d.setHours(0, 0, 0, 0);
+      effective_from_date = ymdLocal(d);
+      effective_from_time = normTime(fromTime || "");
+    } catch (_) {}
+
+    try {
+      const ymd = String(effective_from_date || "").slice(0, 10);
+      const t = normTime(effective_from_time || "");
+      const mvPrev = Array.isArray(calMovesCache) ? calMovesCache.find((mv) =>
+        String(mv && mv.to_pid) === String(pid) &&
+        String(mv && mv.to_date || "").slice(0, 10) === ymd &&
+        normTime(mv && mv.to_time) === t
+      ) : null;
+      if (mvPrev) {
+        effective_from_date = String(mvPrev.from_date || "").slice(0, 10) || effective_from_date;
+        effective_from_time = normTime(mvPrev.from_time || "") || effective_from_time;
+      }
+    } catch (_) {}
+
+    return { from_date: effective_from_date, from_time: effective_from_time };
+  }
+
+  async function deleteSessionFromCalCellState_(st) {
+    const pid = st && st.pid != null ? String(st.pid) : "";
+    const fromDay = st && st.fromDay != null ? parseInt(st.fromDay, 10) : 0;
+    const fromTime = normTime(st && st.fromTime != null ? st.fromTime : "");
+    if (!pid || !fromDay || !fromTime) return;
+
+    const { from_date, from_time } = resolveEffectiveFromBySlot_(pid, fromDay, fromTime);
+    if (!from_date || !from_time) { toast("Dati seduta non validi"); return; }
+
+    const sure = window.confirm("Cancellare questa terapia?");
+    if (!sure) return;
+
+    try {
+      const user = getSession();
+      if (!user || !user.id) { toast("Devi accedere"); return; }
+      const ok = await ensureApiReady();
+      if (!ok) return;
+
+      const terapiaId = getTherapyIdForPatientAtDate_(pid, from_date);
+
+      await api("deleteSession", {
+        userId: user.id,
+        paziente_id: String(pid),
+        terapia_id: terapiaId,
+        from_date,
+        from_time
+      });
+
+      invalidateStatsMovesCache_();
+      toast("Cancellato");
+      await updateCalendarUI();
+      try {
+        await loadPatients({ render: false });
+        if (currentView === "pazienti") renderPatients();
+        if (currentView === "stats") await renderStatsTable_();
+      } catch (_) {}
+    } catch (err) {
+      if (apiHintIfUnknownAction(err)) return;
+      toast(String(err && err.message ? err.message : "Errore cancellazione"));
+    }
+  }
+
+
+  (function bindCalCellActionsModal_() {
+    const modal = $("#modalCalCellActions");
+    if (!modal) return;
+
+    modal.addEventListener("click", (e) => { if (e.target === modal) closeCalCellActionsModal_(); });
+
+    $("#btnCalActionOpen")?.addEventListener("click", async () => {
+      if (!calCellActionsState) return;
+      const pid = calCellActionsState.pid;
+      closeCalCellActionsModal_();
+      const patients = await ensurePatientsForCalendar();
+      const p = (patients || []).find((x) => String(x.id) === String(pid));
+      if (!p) { toast("Paziente non trovato"); return; }
+      openPatientExisting(p);
+    });
+
+    $("#btnCalActionMove")?.addEventListener("click", () => {
+      if (!calCellActionsState) return;
+      const st = calCellActionsState;
+      closeCalCellActionsModal_();
+      openMoveSessionModal_(st);
+    });
+
+    $("#btnCalActionDelete")?.addEventListener("click", async () => {
+      if (!calCellActionsState) return;
+      const st = calCellActionsState;
+      closeCalCellActionsModal_();
+      await deleteSessionFromCalCellState_(st);
+    });
   })();
+
+})();
 
 function scrollCalendarToNow() {
   // Back-compat: usa il focus robusto su giorno+ora correnti
